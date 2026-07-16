@@ -1,6 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -28,6 +30,8 @@ const menuItems = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [showNotifications, setShowNotifications] = useState(false);
 
   return (
     <div className="min-h-screen bg-sand/20 flex">
@@ -66,7 +70,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </nav>
 
         <div className="p-4 mt-auto">
-          <button className="flex items-center gap-4 px-4 py-3 w-full rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 transition-all">
+          <button onClick={() => router.push('/')} className="flex items-center gap-4 px-4 py-3 w-full rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 transition-all cursor-pointer">
             <LogOut size={20} />
             Logout
           </button>
@@ -87,10 +91,36 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
 
           <div className="flex items-center gap-6">
-            <button className="relative p-2 text-earth/50 hover:text-primary transition-colors">
+            <button onClick={() => setShowNotifications(!showNotifications)} className="relative p-2 text-earth/50 hover:text-primary transition-colors cursor-pointer">
               <Bell size={20} />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-secondary rounded-full border-2 border-white" />
             </button>
+            <AnimatePresence>
+              {showNotifications && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="absolute top-16 right-24 w-80 bg-white rounded-2xl border border-secondary/10 shadow-2xl z-50 overflow-hidden"
+                >
+                  <div className="p-4 border-b border-secondary/10">
+                    <h4 className="font-bold text-primary text-sm">Notifications</h4>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    {[
+                      { text: "New article published: History of Lunga", time: "2 hours ago" },
+                      { text: "3 new images uploaded to gallery", time: "5 hours ago" },
+                      { text: "Damba Festival countdown updated", time: "1 day ago" },
+                    ].map((n, i) => (
+                      <div key={i} className="p-4 border-b border-secondary/5 hover:bg-sand/10 transition-colors cursor-pointer">
+                        <p className="text-sm text-primary">{n.text}</p>
+                        <span className="text-[10px] text-earth/40 uppercase tracking-widest">{n.time}</span>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
             <div className="h-8 w-px bg-secondary/10" />
             <div className="flex items-center gap-3">
               <div className="text-right hidden md:block">

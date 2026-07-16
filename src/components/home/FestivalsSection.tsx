@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Calendar, MapPin, Clock, ArrowRight } from "lucide-react";
 import { useState, useEffect } from "react";
+import FestivalModal from './FestivalModal';
 
 const festivals = [
   {
@@ -22,6 +23,8 @@ const festivals = [
 ];
 
 export default function FestivalsSection() {
+  const [selectedFestival, setSelectedFestival] = useState<typeof festivals[0] | null>(null);
+
   return (
     <section id="festivals" className="py-24 bg-[#faf8f5] relative overflow-hidden">
       <div className="container mx-auto px-6 relative z-10">
@@ -41,15 +44,16 @@ export default function FestivalsSection() {
 
         <div className="grid md:grid-cols-2 gap-12">
           {festivals.map((festival, i) => (
-            <FestivalCard key={i} festival={festival} index={i} />
+            <FestivalCard key={i} festival={festival} index={i} onDiscoverMore={() => setSelectedFestival(festival)} />
           ))}
         </div>
       </div>
+      <FestivalModal isOpen={selectedFestival !== null} onClose={() => setSelectedFestival(null)} festival={selectedFestival} />
     </section>
   );
 }
 
-function FestivalCard({ festival, index }: { festival: typeof festivals[0]; index: number }) {
+function FestivalCard({ festival, index, onDiscoverMore }: { festival: typeof festivals[0]; index: number; onDiscoverMore: () => void }) {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, mins: 0 });
 
   useEffect(() => {
@@ -100,7 +104,7 @@ function FestivalCard({ festival, index }: { festival: typeof festivals[0]; inde
           </div>
         </div>
 
-        <button className="flex items-center gap-4 text-secondary font-bold uppercase tracking-widest text-xs group-hover:gap-6 transition-all duration-500 group-hover:text-primary">
+        <button onClick={onDiscoverMore} className="flex items-center gap-4 text-secondary font-bold uppercase tracking-widest text-xs group-hover:gap-6 transition-all duration-500 group-hover:text-primary cursor-pointer">
           Discover More <ArrowRight size={20} className="transition-transform group-hover:translate-x-2" />
         </button>
       </div>

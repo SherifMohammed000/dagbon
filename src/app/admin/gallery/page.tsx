@@ -71,10 +71,10 @@ export default function AdminGallery() {
             <p className="text-sm text-earth/60">Supports JPG, PNG, WEBP, MP4, WebM (Max 50MB)</p>
           </div>
           <div className="flex gap-4 mt-4">
-            <button className="flex items-center gap-2 px-4 py-2 bg-white border border-secondary/20 rounded-lg text-sm font-medium hover:bg-sand/30 transition-colors text-primary">
+            <button onClick={() => alert('Image browser would open here')} className="flex items-center gap-2 px-4 py-2 bg-white border border-secondary/20 rounded-lg text-sm font-medium hover:bg-sand/30 transition-colors text-primary cursor-pointer">
               <ImageIcon size={16} className="text-accent" /> Browse Images
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-white border border-secondary/20 rounded-lg text-sm font-medium hover:bg-sand/30 transition-colors text-primary">
+            <button onClick={() => alert('Video browser would open here')} className="flex items-center gap-2 px-4 py-2 bg-white border border-secondary/20 rounded-lg text-sm font-medium hover:bg-sand/30 transition-colors text-primary cursor-pointer">
               <Video size={16} className="text-accent" /> Browse Videos
             </button>
           </div>
@@ -113,7 +113,7 @@ export default function AdminGallery() {
               className="bg-transparent border-none focus:ring-0 text-sm w-full p-0"
             />
           </div>
-          <button className="p-2 text-earth/50 hover:text-primary transition-colors border border-secondary/10 rounded-lg bg-white">
+          <button className="p-2 text-earth/50 hover:text-primary transition-colors border border-secondary/10 rounded-lg bg-white cursor-pointer">
             <Filter size={18} />
           </button>
         </div>
@@ -153,10 +153,10 @@ export default function AdminGallery() {
 
               {/* Action Overlay */}
               <div className="absolute inset-0 bg-primary/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                <button className="w-10 h-10 rounded-full bg-white text-primary flex items-center justify-center hover:bg-accent hover:text-white transition-colors shadow-lg">
+                <button onClick={() => alert('Editing: ' + item.title)} className="w-10 h-10 rounded-full bg-white text-primary flex items-center justify-center hover:bg-accent hover:text-white transition-colors shadow-lg cursor-pointer">
                   <Edit size={18} />
                 </button>
-                <button className="w-10 h-10 rounded-full bg-white text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors shadow-lg">
+                <button onClick={() => setMediaItems(prev => prev.filter(m => m.id !== item.id))} className="w-10 h-10 rounded-full bg-white text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors shadow-lg cursor-pointer">
                   <Trash2 size={18} />
                 </button>
               </div>
@@ -166,7 +166,7 @@ export default function AdminGallery() {
             <div className="p-4">
               <div className="flex justify-between items-start mb-1">
                 <h3 className="font-bold text-primary text-sm truncate pr-2">{item.title}</h3>
-                <button className="text-earth/30 hover:text-primary">
+                <button className="text-earth/30 hover:text-primary cursor-pointer">
                   <MoreVertical size={16} />
                 </button>
               </div>

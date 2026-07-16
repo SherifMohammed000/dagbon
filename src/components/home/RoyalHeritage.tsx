@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from 'react';
 import { motion } from "framer-motion";
 import { Shield, Crown, Landmark, History } from "lucide-react";
+import RoyalLineageModal from './RoyalLineageModal';
 
 const royalFeatures = [
   {
@@ -22,8 +24,10 @@ const royalFeatures = [
 ];
 
 export default function RoyalHeritage() {
+  const [isLineageOpen, setIsLineageOpen] = useState(false);
+
   return (
-    <section className="py-24 bg-primary text-white relative overflow-hidden">
+    <section id="heritage" className="py-24 bg-primary text-white relative overflow-hidden">
       {/* Decorative Royal Motif */}
       <div className="absolute top-0 right-0 w-1/3 h-full opacity-5 pointer-events-none">
         <Crown size={600} className="text-accent" />
@@ -39,7 +43,7 @@ export default function RoyalHeritage() {
             <span className="text-accent tracking-widest uppercase text-sm mb-4 block">Royal Excellence</span>
             <h2 className="text-4xl md:text-6xl font-serif">The Majesty of <br /> Dagbon Royalty</h2>
           </motion.div>
-          <button className="px-8 py-3 rounded-full border border-accent/20 text-accent hover:bg-accent hover:text-primary transition-all flex items-center gap-2">
+          <button onClick={() => setIsLineageOpen(true)} className="cursor-pointer px-8 py-3 rounded-full border border-accent/20 text-accent hover:bg-accent hover:text-primary transition-all flex items-center gap-2">
             Explore Royal Lineage
           </button>
         </div>
@@ -85,6 +89,7 @@ export default function RoyalHeritage() {
           </div>
         </motion.div>
       </div>
+      <RoyalLineageModal isOpen={isLineageOpen} onClose={() => setIsLineageOpen(false)} />
     </section>
   );
 }

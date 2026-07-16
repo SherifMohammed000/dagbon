@@ -1,6 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { 
   Users, 
   Eye, 
@@ -20,6 +22,9 @@ const stats = [
 ];
 
 export default function AdminDashboard() {
+  const router = useRouter();
+  const [showCalendarPopup, setShowCalendarPopup] = useState(false);
+
   return (
     <div className="space-y-10">
       <div>
@@ -57,7 +62,7 @@ export default function AdminDashboard() {
         <div className="lg:col-span-2 p-8 rounded-[40px] bg-white border border-secondary/10 shadow-sm">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-xl font-serif text-primary">Recent Cultural Content</h2>
-            <button className="text-accent text-xs font-bold uppercase tracking-widest hover:underline">View All</button>
+            <button onClick={() => router.push('/admin/content')} className="text-accent text-xs font-bold uppercase tracking-widest hover:underline cursor-pointer">View All</button>
           </div>
           <div className="space-y-4">
             {[1, 2, 3].map((_, i) => (
@@ -98,9 +103,20 @@ export default function AdminDashboard() {
               <p className="text-xs text-sand/50">Location: All Northern Districts</p>
             </div>
           </div>
-          <button className="w-full mt-12 py-4 rounded-2xl bg-accent text-primary font-bold uppercase tracking-widest text-xs hover:bg-white transition-colors">
+          <button onClick={() => setShowCalendarPopup(!showCalendarPopup)} className="w-full mt-12 py-4 rounded-2xl bg-accent text-primary font-bold uppercase tracking-widest text-xs hover:bg-white transition-colors cursor-pointer">
             Manage Calendar
           </button>
+            {showCalendarPopup && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 p-6 rounded-2xl bg-white/10 border border-accent/20 space-y-3"
+              >
+                <h4 className="text-accent text-xs font-bold uppercase tracking-widest">Quick Calendar Actions</h4>
+                <button onClick={() => router.push('/admin/content')} className="w-full py-3 rounded-xl bg-white/10 text-white text-xs font-bold uppercase tracking-widest hover:bg-accent hover:text-primary transition-all cursor-pointer">Add New Festival Event</button>
+                <button className="w-full py-3 rounded-xl bg-white/10 text-white text-xs font-bold uppercase tracking-widest hover:bg-accent hover:text-primary transition-all cursor-pointer" onClick={() => setShowCalendarPopup(false)}>Close Calendar</button>
+              </motion.div>
+            )}
         </div>
       </div>
     </div>

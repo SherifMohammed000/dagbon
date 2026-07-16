@@ -1,7 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Maximize2, ExternalLink } from "lucide-react";
+import { useState } from 'react';
+import { motion, AnimatePresence } from "framer-motion";
+import { Maximize2, ExternalLink, X, ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 
 const galleryItems = [
@@ -43,6 +44,9 @@ const galleryItems = [
 ];
 
 export default function CulturalGallery() {
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [showAllCollections, setShowAllCollections] = useState(false);
+
   return (
     <section id="fashion" className="py-24 bg-[#fdfaf5]">
       <div className="container mx-auto px-6">
@@ -51,7 +55,7 @@ export default function CulturalGallery() {
             <span className="text-secondary tracking-widest uppercase text-sm mb-4 block font-bold">Visual Heritage</span>
             <h2 className="text-4xl md:text-5xl font-serif text-primary leading-tight">A Glimpse into <br /> Dagbon Life</h2>
           </div>
-          <button className="px-10 py-4 rounded-full border-2 border-primary/10 text-primary font-bold uppercase tracking-widest text-xs hover:bg-primary hover:text-white hover:border-primary transition-all flex items-center gap-2 shadow-lg shadow-primary/5">
+          <button onClick={() => setShowAllCollections(!showAllCollections)} className="px-10 py-4 rounded-full border-2 border-primary/10 text-primary font-bold uppercase tracking-widest text-xs hover:bg-primary hover:text-white hover:border-primary transition-all flex items-center gap-2 shadow-lg shadow-primary/5 cursor-pointer">
             View All Collections <ExternalLink size={18} />
           </button>
         </div>
@@ -81,10 +85,10 @@ export default function CulturalGallery() {
                   <h3 className="text-white text-2xl font-serif mb-3 leading-tight drop-shadow-2xl">{item.title}</h3>
                   <p className="text-white/60 text-xs leading-relaxed mb-6 opacity-0 group-hover:opacity-100 transition-opacity duration-500 max-w-xs">{item.desc}</p>
                   <div className="flex gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                    <button className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center text-white hover:bg-white hover:text-primary transition-all shadow-xl">
+                    <button onClick={() => setLightboxIndex(i)} className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center text-white hover:bg-white hover:text-primary transition-all shadow-xl cursor-pointer">
                       <Maximize2 size={20} />
                     </button>
-                    <button className="px-5 py-2 rounded-full bg-accent/20 backdrop-blur-xl border border-accent/30 text-accent text-[10px] font-bold uppercase tracking-widest hover:bg-accent hover:text-primary transition-all">
+                    <button onClick={() => setLightboxIndex(i)} className="px-5 py-2 rounded-full bg-accent/20 backdrop-blur-xl border border-accent/30 text-accent text-[10px] font-bold uppercase tracking-widest hover:bg-accent hover:text-primary transition-all cursor-pointer">
                       Explore
                     </button>
                   </div>
@@ -94,6 +98,29 @@ export default function CulturalGallery() {
           ))}
         </div>
       </div>
+      {/* Lightbox Modal */}
+      <AnimatePresence>
+        {lightboxIndex !== null && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setLightboxIndex(null)} className="fixed inset-0 bg-black/95 backdrop-blur-md" />
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative z-10 w-full max-w-5xl max-h-[90vh] flex flex-col items-center">
+              <button onClick={() => setLightboxIndex(null)} className="absolute top-4 right-4 w-12 h-12 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white hover:bg-white hover:text-primary transition-all z-20 cursor-pointer"><X size={24} /></button>
+              <div className="relative w-full h-[70vh] rounded-[32px] overflow-hidden">
+                <Image src={galleryItems[lightboxIndex].image} alt={galleryItems[lightboxIndex].title} fill className="object-contain" />
+              </div>
+              <div className="mt-6 text-center">
+                <span className="text-accent text-[10px] uppercase tracking-widest font-bold block mb-1">{galleryItems[lightboxIndex].category}</span>
+                <h3 className="text-white text-2xl font-serif mb-2">{galleryItems[lightboxIndex].title}</h3>
+                <p className="text-white/50 text-sm max-w-lg">{galleryItems[lightboxIndex].desc}</p>
+              </div>
+              <div className="flex gap-6 mt-6">
+                <button onClick={() => setLightboxIndex((lightboxIndex - 1 + galleryItems.length) % galleryItems.length)} className="w-12 h-12 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white hover:bg-accent hover:text-primary transition-all cursor-pointer"><ChevronLeft size={24} /></button>
+                <button onClick={() => setLightboxIndex((lightboxIndex + 1) % galleryItems.length)} className="w-12 h-12 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white hover:bg-accent hover:text-primary transition-all cursor-pointer"><ChevronRight size={24} /></button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }

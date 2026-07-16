@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from 'react';
 import { motion } from "framer-motion";
 import { History, Shield, Users, Landmark } from "lucide-react";
 import Image from "next/image";
+import RoyalLineageModal from './RoyalLineageModal';
 
 const timelineEvents = [
   {
@@ -28,6 +30,8 @@ const timelineEvents = [
 ];
 
 export default function AboutDagbon() {
+  const [isLineageOpen, setIsLineageOpen] = useState(false);
+
   return (
     <section id="history" className="py-32 bg-white relative overflow-hidden">
       {/* Decorative side element */}
@@ -132,7 +136,7 @@ export default function AboutDagbon() {
                 ))}
               </ul>
               
-              <button className="mt-16 px-10 py-5 rounded-full bg-accent text-primary font-bold uppercase tracking-widest text-xs hover:bg-white transition-all shadow-2xl">
+              <button onClick={() => setIsLineageOpen(true)} className="cursor-pointer mt-16 px-10 py-5 rounded-full bg-accent text-primary font-bold uppercase tracking-widest text-xs hover:bg-white transition-all shadow-2xl">
                 Explore The Lineage
               </button>
             </motion.div>
@@ -152,6 +156,7 @@ export default function AboutDagbon() {
           </div>
         </div>
       </div>
+      <RoyalLineageModal isOpen={isLineageOpen} onClose={() => setIsLineageOpen(false)} />
     </section>
   );
 }
