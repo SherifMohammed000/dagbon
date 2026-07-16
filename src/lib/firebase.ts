@@ -57,7 +57,14 @@ export async function uploadFileToFirebase(file: File, path: string): Promise<st
   if (isConfigured && storage) {
     try {
       const storageRef = ref(storage, path);
-      const snapshot = await uploadBytes(storageRef, file);
+      
+      // Add a 5-second timeout in case Firebase hangs (e.g. CORS or Auth issues)
+      const uploadPromise = uploadBytes(storageRef, file);
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('Firebase upload timed out')), 5000)
+      );
+
+      const snapshot = await Promise.race([uploadPromise, timeoutPromise]);
       const downloadURL = await getDownloadURL(snapshot.ref);
       return downloadURL;
     } catch (error) {
