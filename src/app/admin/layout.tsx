@@ -25,7 +25,6 @@ const menuItems = [
   { name: "Music Library", icon: <Music size={20} />, href: "/admin/music" },
   { name: "Media Gallery", icon: <ImageIcon size={20} />, href: "/admin/gallery" },
   { name: "Festivals", icon: <Calendar size={20} />, href: "/admin/festivals" },
-  { name: "Community", icon: <Users size={20} />, href: "/admin/users" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

@@ -23,6 +23,23 @@ const mockMusic = [
   { id: 3, title: "Savannah Winds", artist: "Xylophone Master", category: "Instrumental", plays: "2,100", duration: "5:12" },
 ];
 
+const getAudioDuration = (file: File): Promise<string> => {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const audio = new Audio(url);
+    audio.addEventListener("loadedmetadata", () => {
+      const minutes = Math.floor(audio.duration / 60);
+      const seconds = Math.floor(audio.duration % 60);
+      resolve(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+      URL.revokeObjectURL(url);
+    });
+    audio.addEventListener("error", () => {
+      resolve("Unknown");
+      URL.revokeObjectURL(url);
+    });
+  });
+};
+
 export default function MusicManagement() {
   const [musicItems, setMusicItems] = useState(mockMusic);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -50,13 +67,15 @@ export default function MusicManagement() {
         `music/${Date.now()}_${audioFile.name}`
       );
       
+      const exactDuration = await getAudioDuration(audioFile);
+
       const newTrack = {
         id: Date.now(),
         title: newTitle,
         artist: newArtist,
         category: newCategory,
         plays: "0",
-        duration: "3:00", // placeholder
+        duration: exactDuration,
         url: fileUrl // real uploaded URL
       };
 
@@ -214,13 +233,14 @@ export default function MusicManagement() {
               alert(`Batch uploading ${files.length} audio files...`);
               for (const file of files) {
                 const url = await uploadFileToFirebase(file, `music/${Date.now()}_${file.name}`);
+                const duration = await getAudioDuration(file);
                 setMusicItems(prev => [{
                   id: Date.now() + Math.random(),
                   title: file.name.split(".")[0],
                   artist: "Various Artists",
                   category: "Fusion",
                   plays: "0",
-                  duration: "3:00",
+                  duration,
                   url
                 }, ...prev]);
               }
