@@ -34,7 +34,7 @@ export default function RoyalHeritage() {
       </div>
 
       <div className="container mx-auto px-6 relative z-10">
-        <div className="flex flex-col md:row justify-between items-end mb-16 gap-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 gap-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}

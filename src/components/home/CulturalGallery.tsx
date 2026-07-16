@@ -68,7 +68,7 @@ export default function CulturalGallery() {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1, duration: 0.5 }}
-              className={`group relative overflow-hidden rounded-[40px] bg-primary/5 shadow-2xl ${item.span}`}
+              className={`group relative overflow-hidden rounded-[32px] md:rounded-[40px] bg-primary/5 shadow-2xl min-h-[350px] md:min-h-0 ${item.span}`}
             >
               <Image 
                 src={item.image} 
@@ -104,8 +104,8 @@ export default function CulturalGallery() {
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setLightboxIndex(null)} className="fixed inset-0 bg-black/95 backdrop-blur-md" />
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative z-10 w-full max-w-5xl max-h-[90vh] flex flex-col items-center">
-              <button onClick={() => setLightboxIndex(null)} className="absolute top-4 right-4 w-12 h-12 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white hover:bg-white hover:text-primary transition-all z-20 cursor-pointer"><X size={24} /></button>
-              <div className="relative w-full h-[70vh] rounded-[32px] overflow-hidden">
+              <button onClick={() => setLightboxIndex(null)} className="absolute top-4 right-4 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white hover:bg-white hover:text-primary transition-all z-20 cursor-pointer"><X size={20} /></button>
+              <div className="relative w-full h-[50vh] md:h-[70vh] rounded-[24px] md:rounded-[32px] overflow-hidden">
                 <Image src={galleryItems[lightboxIndex].image} alt={galleryItems[lightboxIndex].title} fill className="object-contain" />
               </div>
               <div className="mt-6 text-center">

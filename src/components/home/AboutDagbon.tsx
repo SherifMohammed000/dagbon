@@ -38,7 +38,7 @@ export default function AboutDagbon() {
       <div className="absolute top-0 right-0 w-1/4 h-full bg-sand/5 skew-x-6 origin-top-right" />
       
       <div className="container mx-auto px-6 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-24 items-center">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-24 items-center">
           {/* Left: Interactive Timeline */}
           <div>
             {/* Real aerial photo above timeline */}
@@ -110,13 +110,13 @@ export default function AboutDagbon() {
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              className="p-12 md:p-20 rounded-[64px] bg-primary text-white relative overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)]"
+              className="p-8 md:p-20 rounded-[40px] md:rounded-[64px] bg-primary text-white relative overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)]"
             >
               {/* Real mud hut photo as background */}
-              <div className="absolute inset-0 rounded-[64px] overflow-hidden">
+              <div className="absolute inset-0 rounded-[40px] md:rounded-[64px] overflow-hidden">
                 <Image src="/mud-hut.jpg" alt="Traditional Dagomba Compound" fill className="object-cover opacity-20" />
               </div>
-              <div className="absolute inset-0 bg-primary/80 rounded-[64px]" />
+              <div className="absolute inset-0 bg-primary/80 rounded-[40px] md:rounded-[64px]" />
               <Landmark className="text-accent mb-10" size={64} />
               <h3 className="text-4xl md:text-5xl font-serif mb-8 leading-tight">The Ancient <br /> Governance</h3>
               <p className="text-sand/60 text-lg mb-10 leading-relaxed font-light">

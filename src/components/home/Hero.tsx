@@ -58,7 +58,7 @@ export default function Hero() {
           <span className="inline-block px-5 py-2 mb-8 text-[10px] font-bold tracking-[0.3em] text-accent uppercase glass-dark rounded-full border border-accent/30 shadow-2xl">
             The Heart of Northern Ghana
           </span>
-          <h1 className="text-6xl md:text-9xl font-serif text-white mb-8 leading-[0.9] drop-shadow-2xl">
+          <h1 className="text-5xl sm:text-6xl md:text-9xl font-serif text-white mb-8 leading-[0.9] drop-shadow-2xl">
             Discover the <br /> 
             <span className="text-gradient">Sacred Heritage</span>
           </h1>
@@ -101,12 +101,12 @@ function CTAButton({ icon, label, href }: { icon: React.ReactNode; label: string
       <motion.div
         whileHover={{ scale: 1.05, y: -5, backgroundColor: "rgba(212, 175, 55, 0.15)" }}
         whileTap={{ scale: 0.95 }}
-        className="flex flex-col items-center justify-center p-8 glass-dark border border-white/10 rounded-[32px] group transition-all duration-500 cursor-pointer h-full shadow-2xl hover:shadow-accent/5 hover:border-accent/30"
+        className="flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 glass-dark border border-white/10 rounded-[32px] group transition-all duration-500 cursor-pointer h-full shadow-2xl hover:shadow-accent/5 hover:border-accent/30"
       >
         <div className="mb-4 text-accent group-hover:text-white transition-all duration-500 transform group-hover:rotate-12">
           {icon}
         </div>
-        <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-white/60 group-hover:text-white group-hover:tracking-[0.2em] transition-all duration-500">
+        <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-white/60 group-hover:text-white group-hover:tracking-[0.2em] transition-all duration-500 text-center">
           {label}
         </span>
       </motion.div>

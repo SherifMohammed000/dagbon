@@ -35,10 +35,10 @@ export default function FoodLifestyle() {
       <div className="absolute top-0 left-0 w-full h-1/2 bg-sand/10 -skew-y-3 origin-top-left" />
       
       <div className="container mx-auto px-6 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-20 items-center">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           {/* Left: Food Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 order-2 lg:order-1">
-            <div className="md:col-span-2 relative h-[400px] rounded-[48px] overflow-hidden shadow-2xl group">
+            <div className="md:col-span-2 relative h-[300px] md:h-[400px] rounded-[32px] md:rounded-[48px] overflow-hidden shadow-2xl group">
                <Image 
                 src="/food.jpg" 
                 alt="Tuo Zaafi" 
@@ -59,7 +59,7 @@ export default function FoodLifestyle() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="p-10 rounded-[40px] border border-secondary/10 bg-sand/5 hover:bg-white hover:shadow-2xl transition-all group"
+                className="p-6 md:p-10 rounded-[32px] md:rounded-[40px] border border-secondary/10 bg-sand/5 hover:bg-white hover:shadow-2xl transition-all group"
               >
                 <div className="w-16 h-16 rounded-2xl bg-secondary/10 flex items-center justify-center text-secondary mb-8 group-hover:bg-secondary group-hover:text-white transition-all shadow-lg shadow-secondary/5">
                   {dish.icon}

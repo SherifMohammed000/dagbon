@@ -179,7 +179,7 @@ export default function MusicExperience() {
                   </div>
 
                   {/* Controls */}
-                  <div className="flex items-center justify-center md:justify-start gap-10">
+                  <div className="flex items-center justify-center md:justify-start gap-6 md:gap-10">
                     <button 
                       onClick={prevTrack}
                       className="text-white/40 hover:text-white transition-all hover:scale-110"
