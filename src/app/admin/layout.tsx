@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -29,9 +29,44 @@ const menuItems = [
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
   const router = useRouter();
+  const pathname = usePathname();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [authorized, setAuthorized] = useState(false);
+
+  useEffect(() => {
+    const session = localStorage.getItem("dagbon_auth");
+    if (!session) {
+      router.push("/auth");
+      return;
+    }
+    try {
+      const auth = JSON.parse(session);
+      if (!auth.isAdmin) {
+        router.push("/auth");
+      } else {
+        setAuthorized(true);
+      }
+    } catch {
+      router.push("/auth");
+    }
+  }, [router]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("dagbon_auth");
+    router.push("/");
+  };
+
+  if (!authorized) {
+    return (
+      <div className="min-h-screen bg-[#0c0d0c] text-white flex items-center justify-center font-serif text-xl">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-accent border-t-transparent rounded-full animate-spin" />
+          <span>Verifying Admin Credentials...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-sand/20 flex">
@@ -70,7 +105,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </nav>
 
         <div className="p-4 mt-auto">
-          <button onClick={() => router.push('/')} className="flex items-center gap-4 px-4 py-3 w-full rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 transition-all cursor-pointer">
+          <button 
+            onClick={handleLogout}
+            className="flex items-center gap-4 px-4 py-3 w-full rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 transition-all cursor-pointer"
+          >
             <LogOut size={20} />
             Logout
           </button>

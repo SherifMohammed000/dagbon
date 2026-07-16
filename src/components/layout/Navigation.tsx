@@ -38,12 +38,23 @@ export default function Navigation() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isExploreOpen, setIsExploreOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
     };
     window.addEventListener("scroll", handleScroll);
+
+    const session = localStorage.getItem("dagbon_auth");
+    if (session) {
+      try {
+        setUser(JSON.parse(session));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -111,6 +122,23 @@ export default function Navigation() {
           >
             <Search size={20} />
           </button>
+          
+          {user ? (
+            <Link 
+              href={user.isAdmin ? "/admin" : "/auth"}
+              className="hidden md:inline-block text-xs font-bold uppercase tracking-widest text-accent hover:text-white transition-colors"
+            >
+              {user.isAdmin ? "Dashboard" : user.name.split(" ")[0]}
+            </Link>
+          ) : (
+            <Link 
+              href="/auth" 
+              className="hidden md:inline-block text-xs font-bold uppercase tracking-widest text-white/70 hover:text-accent transition-colors"
+            >
+              Sign In
+            </Link>
+          )}
+
           <button 
             onClick={() => setIsExploreOpen(true)}
             className="hidden md:flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent text-primary text-xs font-bold uppercase tracking-tighter hover:bg-white transition-colors cursor-pointer"
@@ -118,6 +146,7 @@ export default function Navigation() {
             <Globe size={14} />
             Explore
           </button>
+          
           <button 
             className="md:hidden p-2 text-white cursor-pointer"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -147,6 +176,25 @@ export default function Navigation() {
                 </button>
               ))}
               <hr className="border-white/10" />
+              
+              {user ? (
+                <Link
+                  href={user.isAdmin ? "/admin" : "/auth"}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="w-full text-center py-4 rounded-xl border border-accent/20 text-accent font-bold uppercase tracking-widest block text-sm"
+                >
+                  {user.isAdmin ? "Admin Dashboard" : `Hello, ${user.name}`}
+                </Link>
+              ) : (
+                <Link
+                  href="/auth"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="w-full text-center py-4 rounded-xl border border-accent/20 text-accent font-bold uppercase tracking-widest block text-sm"
+                >
+                  Sign In / Register
+                </Link>
+              )}
+
               <button 
                 onClick={() => handleLinkClick("history")}
                 className="w-full py-4 rounded-xl bg-accent text-primary font-bold uppercase tracking-widest cursor-pointer"

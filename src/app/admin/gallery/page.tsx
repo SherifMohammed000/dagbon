@@ -12,8 +12,11 @@ import {
   MoreVertical, 
   Trash2, 
   Edit,
-  Plus
+  Plus,
+  Music,
+  Loader2
 } from "lucide-react";
+import { uploadFileToFirebase } from "@/lib/firebase";
 
 // All images currently used across the site
 const initialMedia = [
@@ -32,11 +35,44 @@ export default function AdminGallery() {
   const [mediaItems, setMediaItems] = useState(initialMedia);
   const [filter, setFilter] = useState("all");
   const [isUploading, setIsUploading] = useState(false);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
 
   const handleUploadClick = () => {
-    // In a real app, this would trigger a file input dialog
-    // Here we're just toggling an upload UI state for demonstration
     setIsUploading(!isUploading);
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingFile(true);
+    try {
+      const type = file.type.startsWith("image/") ? "image" 
+                 : file.type.startsWith("video/") ? "video" 
+                 : file.type.startsWith("audio/") ? "audio"
+                 : "image";
+      
+      const fileUrl = await uploadFileToFirebase(
+        file, 
+        `gallery/${Date.now()}_${file.name}`
+      );
+      
+      const newItem = {
+        id: Date.now(),
+        type,
+        url: fileUrl,
+        title: file.name.split(".")[0],
+        size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+        date: new Date().toISOString().split("T")[0]
+      };
+      
+      setMediaItems(prev => [newItem, ...prev]);
+      setIsUploading(false);
+    } catch (err) {
+      console.error("Upload error:", err);
+    } finally {
+      setIsUploadingFile(false);
+    }
   };
 
   return (
@@ -61,21 +97,33 @@ export default function AdminGallery() {
         <motion.div 
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
-          className="p-8 rounded-3xl border-2 border-dashed border-secondary/30 bg-secondary/5 flex flex-col items-center justify-center text-center space-y-4"
+          className="p-8 rounded-3xl border-2 border-dashed border-secondary/30 bg-secondary/5 flex flex-col items-center justify-center text-center space-y-4 relative"
         >
+          <input 
+            type="file" 
+            accept="image/*,video/*,audio/*"
+            onChange={handleFileChange}
+            id="gallery-file-input"
+            className="hidden"
+            disabled={isUploadingFile}
+          />
+          
           <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center text-secondary shadow-sm">
-            <Plus size={32} />
+            {isUploadingFile ? <Loader2 className="animate-spin text-secondary" size={32} /> : <Plus size={32} />}
           </div>
           <div>
-            <h3 className="text-lg font-bold text-primary mb-1">Drag and drop files here</h3>
-            <p className="text-sm text-earth/60">Supports JPG, PNG, WEBP, MP4, WebM (Max 50MB)</p>
+            <h3 className="text-lg font-bold text-primary mb-1">
+              {isUploadingFile ? "Uploading File..." : "Upload files to storage"}
+            </h3>
+            <p className="text-sm text-earth/60">Supports Images, Videos, and Audio Music (Max 50MB)</p>
           </div>
           <div className="flex gap-4 mt-4">
-            <button onClick={() => alert('Image browser would open here')} className="flex items-center gap-2 px-4 py-2 bg-white border border-secondary/20 rounded-lg text-sm font-medium hover:bg-sand/30 transition-colors text-primary cursor-pointer">
-              <ImageIcon size={16} className="text-accent" /> Browse Images
-            </button>
-            <button onClick={() => alert('Video browser would open here')} className="flex items-center gap-2 px-4 py-2 bg-white border border-secondary/20 rounded-lg text-sm font-medium hover:bg-sand/30 transition-colors text-primary cursor-pointer">
-              <Video size={16} className="text-accent" /> Browse Videos
+            <button 
+              onClick={() => document.getElementById('gallery-file-input')?.click()} 
+              disabled={isUploadingFile}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-secondary/20 rounded-lg text-sm font-medium hover:bg-sand/30 transition-colors text-primary cursor-pointer disabled:opacity-50"
+            >
+              <Upload size={16} className="text-accent" /> Select & Upload Media
             </button>
           </div>
         </motion.div>
@@ -139,15 +187,19 @@ export default function AdminGallery() {
                   fill 
                   className="object-cover group-hover:scale-110 transition-transform duration-700" 
                 />
+              ) : item.type === "video" ? (
+                <div className="absolute inset-0 flex items-center justify-center text-earth/30 bg-primary/20">
+                  <Video size={48} className="text-primary" />
+                </div>
               ) : (
-                <div className="absolute inset-0 flex items-center justify-center text-earth/30">
-                  <Video size={48} />
+                <div className="absolute inset-0 flex items-center justify-center text-accent/50 bg-primary/20">
+                  <Music size={48} className="text-accent animate-pulse" />
                 </div>
               )}
               
               {/* Type Badge */}
               <div className="absolute top-3 left-3 px-2 py-1 bg-black/50 backdrop-blur-md rounded text-white text-[10px] font-bold uppercase tracking-widest flex items-center gap-1">
-                {item.type === "image" ? <ImageIcon size={12} /> : <Video size={12} />}
+                {item.type === "image" ? <ImageIcon size={12} /> : item.type === "video" ? <Video size={12} /> : <Music size={12} />}
                 {item.type}
               </div>
 

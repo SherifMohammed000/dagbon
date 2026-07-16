@@ -10,9 +10,12 @@ import {
   Edit2, 
   Trash2, 
   Disc,
-  Upload
+  Upload,
+  Loader2,
+  Pause
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { uploadFileToFirebase } from "@/lib/firebase";
 
 const mockMusic = [
   { id: 1, title: "The King's Arrival", artist: "Lunsi Drummers", category: "Ceremonial", plays: "1,240", duration: "4:20" },
@@ -24,6 +27,69 @@ export default function MusicManagement() {
   const [musicItems, setMusicItems] = useState(mockMusic);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showBatchUpload, setShowBatchUpload] = useState(false);
+
+  // New track form states
+  const [newTitle, setNewTitle] = useState("");
+  const [newArtist, setNewArtist] = useState("");
+  const [newCategory, setNewCategory] = useState("Ceremonial");
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  // Preview playing states
+  const [playingTrackId, setPlayingTrackId] = useState<number | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const handleAddTrack = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTitle.trim() || !newArtist.trim() || !audioFile) return;
+
+    setUploading(true);
+    try {
+      const fileUrl = await uploadFileToFirebase(
+        audioFile, 
+        `music/${Date.now()}_${audioFile.name}`
+      );
+      
+      const newTrack = {
+        id: Date.now(),
+        title: newTitle,
+        artist: newArtist,
+        category: newCategory,
+        plays: "0",
+        duration: "3:00", // placeholder
+        url: fileUrl // real uploaded URL
+      };
+
+      setMusicItems(prev => [newTrack, ...prev]);
+      setNewTitle("");
+      setNewArtist("");
+      setNewCategory("Ceremonial");
+      setAudioFile(null);
+      setShowAddForm(false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handlePlayPreview = (track: typeof mockMusic[0] & { url?: string }) => {
+    if (!track.url) {
+      alert("No audio file available for preview.");
+      return;
+    }
+
+    if (playingTrackId === track.id) {
+      audioRef.current?.pause();
+      setPlayingTrackId(null);
+    } else {
+      if (audioRef.current) {
+        audioRef.current.src = track.url;
+        audioRef.current.play().catch(err => console.error("Playback error:", err));
+        setPlayingTrackId(track.id);
+      }
+    }
+  };
 
   return (
     <div className="space-y-10">
@@ -42,18 +108,136 @@ export default function MusicManagement() {
         </div>
       </div>
 
+      {/* Hidden audio element for preview */}
+      <audio 
+        ref={audioRef} 
+        onEnded={() => setPlayingTrackId(null)}
+        className="hidden" 
+      />
+
       {showAddForm && (
-        <div className="p-6 rounded-3xl bg-white border border-secondary/10 shadow-lg space-y-4">
+        <form onSubmit={handleAddTrack} className="p-6 rounded-3xl bg-white border border-secondary/10 shadow-lg space-y-4">
           <h3 className="font-serif text-lg text-primary">Add New Track</h3>
-          <p className="text-sm text-earth/50">Track upload form would appear here. This is a demo placeholder.</p>
-          <button onClick={() => setShowAddForm(false)} className="px-6 py-3 rounded-xl border border-secondary/10 text-earth/60 font-bold text-xs uppercase tracking-widest hover:bg-sand/30 transition-all cursor-pointer">Close</button>
-        </div>
+          
+          <div className="space-y-1">
+            <label className="text-[10px] uppercase font-bold tracking-wider text-earth/50">Track Title</label>
+            <input 
+              type="text" 
+              placeholder="e.g. Damba Dance Beat" 
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              required
+              className="w-full px-4 py-3 rounded-xl border border-secondary/10 text-sm text-primary placeholder:text-earth/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 bg-white" 
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[10px] uppercase font-bold tracking-wider text-earth/50">Artist / Drummers</label>
+            <input 
+              type="text" 
+              placeholder="e.g. Savelugu Drummers" 
+              value={newArtist}
+              onChange={(e) => setNewArtist(e.target.value)}
+              required
+              className="w-full px-4 py-3 rounded-xl border border-secondary/10 text-sm text-primary placeholder:text-earth/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 bg-white" 
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[10px] uppercase font-bold tracking-wider text-earth/50">Category</label>
+            <select 
+              value={newCategory}
+              onChange={(e) => setNewCategory(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-secondary/10 text-sm text-primary focus:outline-none focus:ring-2 focus:ring-secondary/30 bg-white"
+            >
+              <option>Ceremonial</option>
+              <option>Festival</option>
+              <option>Instrumental</option>
+              <option>Fusion</option>
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] uppercase font-bold tracking-wider text-earth/50">Audio File (Music/Drum Beats)</label>
+            <input 
+              type="file" 
+              accept="audio/*"
+              onChange={(e) => setAudioFile(e.target.files?.[0] || null)}
+              required
+              className="w-full text-xs text-primary file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-secondary/10 file:text-secondary hover:file:bg-secondary/20 file:cursor-pointer"
+            />
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button 
+              type="submit"
+              disabled={uploading}
+              className="px-6 py-3 rounded-xl bg-secondary text-white font-bold text-xs uppercase tracking-widest hover:bg-primary transition-all cursor-pointer flex items-center gap-2 disabled:opacity-50"
+            >
+              {uploading ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  Uploading audio...
+                </>
+              ) : (
+                "Add Track"
+              )}
+            </button>
+            <button 
+              type="button"
+              onClick={() => {
+                setShowAddForm(false);
+                setAudioFile(null);
+                setNewTitle("");
+                setNewArtist("");
+              }} 
+              disabled={uploading}
+              className="px-6 py-3 rounded-xl border border-secondary/10 text-earth/60 font-bold text-xs uppercase tracking-widest hover:bg-sand/30 transition-all cursor-pointer disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
       )}
+
       {showBatchUpload && (
-        <div className="p-8 rounded-3xl border-2 border-dashed border-secondary/30 bg-secondary/5 text-center space-y-3">
-          <h3 className="text-lg font-bold text-primary">Batch Upload Zone</h3>
-          <p className="text-sm text-earth/50">Drag and drop multiple audio files here, or click to browse.</p>
-          <button onClick={() => setShowBatchUpload(false)} className="px-6 py-3 rounded-xl border border-secondary/10 text-earth/60 font-bold text-xs uppercase tracking-widest hover:bg-sand/30 transition-all cursor-pointer">Close</button>
+        <div className="p-8 rounded-3xl border-2 border-dashed border-secondary/30 bg-secondary/5 text-center space-y-4">
+          <input 
+            type="file" 
+            accept="audio/*"
+            multiple
+            id="batch-audio-input"
+            className="hidden"
+            onChange={async (e) => {
+              const files = Array.from(e.target.files || []);
+              if (files.length === 0) return;
+              alert(`Batch uploading ${files.length} audio files...`);
+              for (const file of files) {
+                const url = await uploadFileToFirebase(file, `music/${Date.now()}_${file.name}`);
+                setMusicItems(prev => [{
+                  id: Date.now() + Math.random(),
+                  title: file.name.split(".")[0],
+                  artist: "Various Artists",
+                  category: "Fusion",
+                  plays: "0",
+                  duration: "3:00",
+                  url
+                }, ...prev]);
+              }
+              setShowBatchUpload(false);
+            }}
+          />
+          <h3 className="text-lg font-bold text-primary">Batch Upload Audio</h3>
+          <p className="text-sm text-earth/50">Select multiple audio files to batch upload into the music library.</p>
+          <div className="flex gap-4 justify-center">
+            <button 
+              onClick={() => document.getElementById('batch-audio-input')?.click()}
+              className="px-6 py-3 rounded-xl bg-secondary text-white font-bold text-xs uppercase tracking-widest hover:bg-primary transition-all cursor-pointer"
+            >
+              Select files
+            </button>
+            <button onClick={() => setShowBatchUpload(false)} className="px-6 py-3 rounded-xl border border-secondary/10 text-earth/60 font-bold text-xs uppercase tracking-widest hover:bg-sand/30 transition-all cursor-pointer">Cancel</button>
+          </div>
         </div>
       )}
 
@@ -86,8 +270,19 @@ export default function MusicManagement() {
             </div>
 
             <div className="flex items-center gap-4">
-              <button onClick={() => alert('Playing preview: ' + track.title)} className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-sand/50 text-primary font-bold text-xs uppercase tracking-widest hover:bg-accent transition-all cursor-pointer">
-                <Play size={14} fill="currentColor" /> Preview
+              <button 
+                onClick={() => handlePlayPreview(track)} 
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-sand/50 text-primary font-bold text-xs uppercase tracking-widest hover:bg-accent transition-all cursor-pointer"
+              >
+                {playingTrackId === track.id ? (
+                  <>
+                    <Pause size={14} fill="currentColor" /> Pause
+                  </>
+                ) : (
+                  <>
+                    <Play size={14} fill="currentColor" /> Preview
+                  </>
+                )}
               </button>
               <button onClick={() => alert('Editing: ' + track.title)} className="p-3 rounded-xl border border-secondary/10 text-earth/30 hover:text-primary transition-all cursor-pointer">
                 <Edit2 size={18} />

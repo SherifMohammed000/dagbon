@@ -9,9 +9,12 @@ import {
   Edit2, 
   Trash2, 
   Eye,
-  FileText
+  FileText,
+  Paperclip,
+  Loader2
 } from "lucide-react";
 import { useState } from "react";
+import { uploadFileToFirebase } from "@/lib/firebase";
 
 const mockContent = [
   { id: 1, title: "The Migration of Tohazie", category: "History", status: "Published", author: "Admin", date: "2026-05-10" },
@@ -26,16 +29,43 @@ export default function ContentManagement() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newCategory, setNewCategory] = useState("History");
+  const [newBody, setNewBody] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const handleDelete = (id: number) => {
     setContentItems(prev => prev.filter(item => item.id !== id));
   };
-  const handleCreate = () => {
+  
+  const handleCreate = async () => {
     if (!newTitle.trim()) return;
-    const newItem = { id: Date.now(), title: newTitle, category: newCategory, status: "Draft", author: "Admin", date: new Date().toISOString().split('T')[0] };
+    
+    setUploading(true);
+    let fileUrl = "";
+    if (selectedFile) {
+      fileUrl = await uploadFileToFirebase(
+        selectedFile, 
+        `content/${Date.now()}_${selectedFile.name}`
+      );
+    }
+    
+    const newItem = { 
+      id: Date.now(), 
+      title: newTitle, 
+      category: newCategory, 
+      status: "Published", 
+      author: "Admin", 
+      date: new Date().toISOString().split('T')[0],
+      fileUrl,
+      body: newBody
+    };
+    
     setContentItems(prev => [newItem, ...prev]);
     setNewTitle("");
     setNewCategory("History");
+    setNewBody("");
+    setSelectedFile(null);
+    setUploading(false);
     setShowCreateForm(false);
   };
 
@@ -54,13 +84,80 @@ export default function ContentManagement() {
       {showCreateForm && (
         <div className="p-6 rounded-3xl bg-white border border-secondary/10 shadow-lg space-y-4">
           <h3 className="font-serif text-lg text-primary">Create New Post</h3>
-          <input type="text" placeholder="Post title..." value={newTitle} onChange={(e) => setNewTitle(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-secondary/10 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/30" />
-          <select value={newCategory} onChange={(e) => setNewCategory(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-secondary/10 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/30">
-            <option>History</option><option>Royalty</option><option>Music</option><option>Fashion</option><option>Food</option>
-          </select>
-          <div className="flex gap-3">
-            <button onClick={handleCreate} className="px-6 py-3 rounded-xl bg-secondary text-white font-bold text-xs uppercase tracking-widest hover:bg-primary transition-all cursor-pointer">Publish</button>
-            <button onClick={() => setShowCreateForm(false)} className="px-6 py-3 rounded-xl border border-secondary/10 text-earth/60 font-bold text-xs uppercase tracking-widest hover:bg-sand/30 transition-all cursor-pointer">Cancel</button>
+          
+          <div className="space-y-1">
+            <label className="text-[10px] uppercase font-bold tracking-wider text-earth/50">Post Title</label>
+            <input 
+              type="text" 
+              placeholder="Post title..." 
+              value={newTitle} 
+              onChange={(e) => setNewTitle(e.target.value)} 
+              className="w-full px-4 py-3 rounded-xl border border-secondary/10 text-sm text-primary placeholder:text-earth/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 bg-white" 
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[10px] uppercase font-bold tracking-wider text-earth/50">Post Category</label>
+            <select 
+              value={newCategory} 
+              onChange={(e) => setNewCategory(e.target.value)} 
+              className="w-full px-4 py-3 rounded-xl border border-secondary/10 text-sm text-primary focus:outline-none focus:ring-2 focus:ring-secondary/30 bg-white"
+            >
+              <option>History</option>
+              <option>Royalty</option>
+              <option>Music</option>
+              <option>Fashion</option>
+              <option>Food</option>
+            </select>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[10px] uppercase font-bold tracking-wider text-earth/50">Content Body</label>
+            <textarea
+              placeholder="Write post content here..."
+              value={newBody}
+              onChange={(e) => setNewBody(e.target.value)}
+              rows={5}
+              className="w-full px-4 py-3 rounded-xl border border-secondary/10 text-sm text-primary placeholder:text-earth/40 focus:outline-none focus:ring-2 focus:ring-secondary/30 bg-white"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] uppercase font-bold tracking-wider text-earth/50">Attach File (Images/Documents)</label>
+            <input 
+              type="file" 
+              onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+              className="w-full text-xs text-primary file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-secondary/10 file:text-secondary hover:file:bg-secondary/20 file:cursor-pointer"
+            />
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button 
+              onClick={handleCreate} 
+              disabled={uploading}
+              className="px-6 py-3 rounded-xl bg-secondary text-white font-bold text-xs uppercase tracking-widest hover:bg-primary transition-all cursor-pointer flex items-center gap-2 disabled:opacity-50"
+            >
+              {uploading ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                "Publish"
+              )}
+            </button>
+            <button 
+              onClick={() => {
+                setShowCreateForm(false);
+                setSelectedFile(null);
+                setNewBody("");
+                setNewTitle("");
+              }} 
+              disabled={uploading}
+              className="px-6 py-3 rounded-xl border border-secondary/10 text-earth/60 font-bold text-xs uppercase tracking-widest hover:bg-sand/30 transition-all cursor-pointer disabled:opacity-50"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
@@ -107,7 +204,19 @@ export default function ContentManagement() {
                     <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary group-hover:bg-accent group-hover:text-primary transition-all">
                       <FileText size={18} />
                     </div>
-                    <span className="font-bold text-primary text-sm">{item.title}</span>
+                    <div>
+                      <span className="font-bold text-primary text-sm block">{item.title}</span>
+                      {(item as any).fileUrl && (
+                        <a 
+                          href={(item as any).fileUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="inline-flex items-center gap-1.5 text-xs text-secondary hover:text-primary transition-colors font-bold mt-1"
+                        >
+                          <Paperclip size={12} /> View Attachment
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </td>
                 <td className="px-8 py-6">
