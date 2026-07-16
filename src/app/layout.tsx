@@ -15,8 +15,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="scroll-smooth">
-      <body className="antialiased pattern-bg">
+    <html lang="en" className="scroll-smooth overflow-x-hidden">
+      <body className="antialiased pattern-bg overflow-x-hidden">
         <Navigation />
         {children}
         <CulturalGuide />
