@@ -5,7 +5,19 @@ import { Play, SkipForward, SkipBack, Volume2, Music as MusicIcon, Disc, Pause }
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 
-const tracks = [
+const tracks: { title: string; artist: string; category: string; duration: string; url: string }[] = (() => {
+  if (typeof window !== "undefined") {
+    const stored = localStorage.getItem("dagbon_music");
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch {
+        // ignore parse errors
+      }
+    }
+  }
+  return [];
+})();
   {
     title: "The King's Arrival",
     artist: "Lunsi Drummers of Yendi",

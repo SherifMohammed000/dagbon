@@ -5,7 +5,19 @@ import { Calendar, MapPin, Clock, ArrowRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import FestivalModal from './FestivalModal';
 
-const festivals = [
+const festivals: { name: string; date: string; location: string; description: string; color: string }[] = (() => {
+  if (typeof window !== "undefined") {
+    const stored = localStorage.getItem("dagbon_festivals");
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch {
+        // ignore parse errors
+      }
+    }
+  }
+  return [];
+})();
   {
     name: "Damba Festival",
     date: "2026-09-15",
