@@ -5,41 +5,32 @@ import { Play, SkipForward, SkipBack, Volume2, Music as MusicIcon, Disc, Pause }
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 
-const tracks: { title: string; artist: string; category: string; duration: string; url: string }[] = (() => {
+// Load tracks from localStorage
+const [tracks, setTracks] = useState<{ title: string; artist: string; category: string; duration: string; url: string }[]>(() => {
   if (typeof window !== "undefined") {
     const stored = localStorage.getItem("dagbon_music");
     if (stored) {
       try {
         return JSON.parse(stored);
-      } catch {
-        // ignore parse errors
-      }
+      } catch {}
     }
   }
   return [];
-})();
-  {
-    title: "The King's Arrival",
-    artist: "Lunsi Drummers of Yendi",
-    category: "Ceremonial",
-    duration: "4:20",
-    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", // Sample MP3
-  },
-  {
-    title: "Damba Celebration",
-    artist: "Northern Folk Ensemble",
-    category: "Festival",
-    duration: "3:45",
-    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3", // Sample MP3
-  },
-  {
-    title: "Spirit of the Savannah",
-    artist: "Modern Fusion Band",
-    category: "Fusion",
-    duration: "5:12",
-    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3", // Sample MP3
-  },
-];
+});
+
+// Sync with other tabs when admin updates localStorage
+useEffect(() => {
+  const handler = () => {
+    const stored = localStorage.getItem("dagbon_music");
+    if (stored) {
+      try {
+        setTracks(JSON.parse(stored));
+      } catch {}
+    }
+  };
+  window.addEventListener("storage", handler);
+  return () => window.removeEventListener("storage", handler);
+}, []);
 
 export default function MusicExperience() {
   const [currentTrack, setCurrentTrack] = useState(0);

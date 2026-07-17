@@ -5,34 +5,26 @@ import { Calendar, MapPin, Clock, ArrowRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import FestivalModal from './FestivalModal';
 
-const festivals: { name: string; date: string; location: string; description: string; color: string }[] = (() => {
+const [festivals, setFestivals] = useState<{ name: string; date: string; location: string; description: string; color: string }[]>(() => {
   if (typeof window !== "undefined") {
     const stored = localStorage.getItem("dagbon_festivals");
     if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch {
-        // ignore parse errors
-      }
+      try { return JSON.parse(stored); } catch {}
     }
   }
   return [];
-})();
-  {
-    name: "Damba Festival",
-    date: "2026-09-15",
-    location: "Yendi Palaces",
-    description: "The most significant festival in Dagbon, celebrating the birth of Prophet Muhammad with horse riding and drumming.",
-    color: "bg-secondary",
-  },
-  {
-    name: "Bugum Festival",
-    date: "2026-08-20",
-    location: "All Dagbon Towns",
-    description: "The Fire Festival, commemorating a historical search for a lost prince with torches and chanting.",
-    color: "bg-earth",
-  },
-];
+});
+
+useEffect(() => {
+  const handler = () => {
+    const stored = localStorage.getItem("dagbon_festivals");
+    if (stored) {
+      try { setFestivals(JSON.parse(stored)); } catch {}
+    }
+  };
+  window.addEventListener("storage", handler);
+  return () => window.removeEventListener("storage", handler);
+}, []);
 
 export default function FestivalsSection() {
   const [selectedFestival, setSelectedFestival] = useState<typeof festivals[0] | null>(null);
