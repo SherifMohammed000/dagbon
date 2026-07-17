@@ -5,7 +5,9 @@ import { Calendar, MapPin, Clock, ArrowRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import FestivalModal from './FestivalModal';
 
-const [festivals, setFestivals] = useState<{ name: string; date: string; location: string; description: string; color: string }[]>(() => {
+type Festival = { name: string; date: string; location: string; description: string; color: string };
+
+function loadFestivals(): Festival[] {
   if (typeof window !== "undefined") {
     const stored = localStorage.getItem("dagbon_festivals");
     if (stored) {
@@ -13,21 +15,18 @@ const [festivals, setFestivals] = useState<{ name: string; date: string; locatio
     }
   }
   return [];
-});
-
-useEffect(() => {
-  const handler = () => {
-    const stored = localStorage.getItem("dagbon_festivals");
-    if (stored) {
-      try { setFestivals(JSON.parse(stored)); } catch {}
-    }
-  };
-  window.addEventListener("storage", handler);
-  return () => window.removeEventListener("storage", handler);
-}, []);
+}
 
 export default function FestivalsSection() {
-  const [selectedFestival, setSelectedFestival] = useState<typeof festivals[0] | null>(null);
+  const [festivals, setFestivals] = useState<Festival[]>(loadFestivals);
+  const [selectedFestival, setSelectedFestival] = useState<Festival | null>(null);
+
+  // Sync when admin saves changes in another tab
+  useEffect(() => {
+    const handler = () => setFestivals(loadFestivals());
+    window.addEventListener("storage", handler);
+    return () => window.removeEventListener("storage", handler);
+  }, []);
 
   return (
     <section id="festivals" className="py-24 bg-[#faf8f5] relative overflow-hidden">
@@ -46,18 +45,29 @@ export default function FestivalsSection() {
           </motion.div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-12">
-          {festivals.map((festival, i) => (
-            <FestivalCard key={i} festival={festival} index={i} onDiscoverMore={() => setSelectedFestival(festival)} />
-          ))}
-        </div>
+        {festivals.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-20 text-earth/40"
+          >
+            <Calendar size={48} className="mx-auto mb-4 opacity-40" />
+            <p className="text-lg">No festivals added yet. Add events from the admin panel.</p>
+          </motion.div>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-12">
+            {festivals.map((festival, i) => (
+              <FestivalCard key={i} festival={festival} index={i} onDiscoverMore={() => setSelectedFestival(festival)} />
+            ))}
+          </div>
+        )}
       </div>
       <FestivalModal isOpen={selectedFestival !== null} onClose={() => setSelectedFestival(null)} festival={selectedFestival} />
     </section>
   );
 }
 
-function FestivalCard({ festival, index, onDiscoverMore }: { festival: typeof festivals[0]; index: number; onDiscoverMore: () => void }) {
+function FestivalCard({ festival, index, onDiscoverMore }: { festival: Festival; index: number; onDiscoverMore: () => void }) {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, mins: 0 });
 
   useEffect(() => {
@@ -84,15 +94,15 @@ function FestivalCard({ festival, index, onDiscoverMore }: { festival: typeof fe
       className="group relative rounded-[56px] overflow-hidden border border-secondary/5 bg-white p-8 md:p-14 flex flex-col xl:flex-row gap-12 items-center shadow-2xl hover:shadow-secondary/10 transition-all duration-700"
     >
       <div className="flex-1 space-y-8 relative z-10">
-        <div className={`inline-flex items-center gap-3 px-6 py-2 rounded-full text-white text-[10px] font-bold uppercase tracking-widest shadow-xl ${festival.color}`}>
+        <div className={`inline-flex items-center gap-3 px-6 py-2 rounded-full text-white text-[10px] font-bold uppercase tracking-widest shadow-xl ${festival.color || "bg-secondary"}`}>
           <Calendar size={16} />
           {new Date(festival.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
         </div>
-        
+
         <h3 className="text-4xl md:text-6xl font-serif text-primary group-hover:text-secondary transition-colors duration-500 leading-tight">
           {festival.name}
         </h3>
-        
+
         <p className="text-earth/60 leading-relaxed text-lg font-light">
           {festival.description}
         </p>
