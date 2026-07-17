@@ -241,7 +241,7 @@ export default function MusicManagement() {
               if (files.length === 0) return;
               alert(`Batch uploading ${files.length} audio files...`);
               
-              const newTracks = [];
+              const newTracks: { id: number; title: string; artist: string; category: string; plays: string; duration: string; url: string }[] = [];
               for (const file of files) {
                 try {
                   const url = await uploadFileToFirebase(file, `music/${Date.now()}_${file.name}`);
