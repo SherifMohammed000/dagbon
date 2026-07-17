@@ -53,26 +53,39 @@ if (isConfigured) {
  * @param path The destination path in the storage bucket
  * @returns Promise resolving to the download URL
  */
+/**
+ * Converts a File to a base64 data URL (works across pages, tabs, and localStorage).
+ */
+function fileToDataURL(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export async function uploadFileToFirebase(file: File, path: string): Promise<string> {
   if (isConfigured && storage) {
     try {
       const storageRef = ref(storage, path);
-      
-      // Add a 5-second timeout in case Firebase hangs (e.g. CORS or Auth issues)
+
+      // Allow up to 60 seconds for audio uploads — they can be large
       const uploadPromise = uploadBytes(storageRef, file);
-      const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('Firebase upload timed out')), 5000)
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Firebase upload timed out')), 60000)
       );
 
       const snapshot = await Promise.race([uploadPromise, timeoutPromise]);
       const downloadURL = await getDownloadURL(snapshot.ref);
       return downloadURL;
     } catch (error) {
-      console.error("Firebase upload failed, falling back to local URL:", error);
-      return URL.createObjectURL(file);
+      console.error("Firebase upload failed, falling back to base64 data URL:", error);
+      // Base64 data URL is serializable — safe to store in localStorage and use across pages
+      return fileToDataURL(file);
     }
   } else {
-    // Return a local Object URL for instant in-browser previews
-    return URL.createObjectURL(file);
+    // No Firebase: encode as base64 so the URL survives page navigation and localStorage
+    return fileToDataURL(file);
   }
 }
