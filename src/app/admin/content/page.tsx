@@ -13,19 +13,12 @@ import {
   Paperclip,
   Loader2
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { uploadFileToFirebase } from "@/lib/firebase";
-
-const mockContent = [
-  { id: 1, title: "The Migration of Tohazie", category: "History", status: "Published", author: "Admin", date: "2026-05-10" },
-  { id: 2, title: "Royal Regalia and their Meanings", category: "Royalty", status: "Draft", author: "Admin", date: "2026-05-11" },
-  { id: 3, title: "Modern Northern Ghana Fusion Music", category: "Music", status: "Published", author: "Admin", date: "2026-05-09" },
-  { id: 4, title: "The Significance of Smock Colors", category: "Fashion", status: "Scheduled", author: "Admin", date: "2026-05-15" },
-];
 
 export default function ContentManagement() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [contentItems, setContentItems] = useState(mockContent);
+  const [contentItems, setContentItems] = useState<any[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newCategory, setNewCategory] = useState("History");
@@ -33,8 +26,23 @@ export default function ContentManagement() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
+  useEffect(() => {
+    const saved = localStorage.getItem("dagbon_content");
+    if (saved) {
+      try {
+        setContentItems(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to parse content items", e);
+      }
+    }
+  }, []);
+
   const handleDelete = (id: number) => {
-    setContentItems(prev => prev.filter(item => item.id !== id));
+    setContentItems(prev => {
+      const updated = prev.filter(item => item.id !== id);
+      localStorage.setItem("dagbon_content", JSON.stringify(updated));
+      return updated;
+    });
   };
   
   const handleCreate = async () => {
@@ -60,7 +68,11 @@ export default function ContentManagement() {
       body: newBody
     };
     
-    setContentItems(prev => [newItem, ...prev]);
+    setContentItems(prev => {
+      const updated = [newItem, ...prev];
+      localStorage.setItem("dagbon_content", JSON.stringify(updated));
+      return updated;
+    });
     setNewTitle("");
     setNewCategory("History");
     setNewBody("");

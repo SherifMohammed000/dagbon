@@ -14,18 +14,12 @@ import {
   Loader2,
   MapPin
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { uploadFileToFirebase } from "@/lib/firebase";
-
-const mockFestivals = [
-  { id: 1, title: "Damba Festival", location: "Yendi", status: "Upcoming", date: "2026-08-15" },
-  { id: 2, title: "Bugum (Fire) Festival", location: "Tamale", status: "Past", date: "2026-01-10" },
-  { id: 3, title: "Samba Festival", location: "Savelugu", status: "Draft", date: "2026-11-20" },
-];
 
 export default function FestivalsManagement() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [festivals, setFestivals] = useState(mockFestivals);
+  const [festivals, setFestivals] = useState<any[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newLocation, setNewLocation] = useState("");
@@ -34,8 +28,23 @@ export default function FestivalsManagement() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
+  useEffect(() => {
+    const saved = localStorage.getItem("dagbon_festivals");
+    if (saved) {
+      try {
+        setFestivals(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to parse festivals", e);
+      }
+    }
+  }, []);
+
   const handleDelete = (id: number) => {
-    setFestivals(prev => prev.filter(item => item.id !== id));
+    setFestivals(prev => {
+      const updated = prev.filter(item => item.id !== id);
+      localStorage.setItem("dagbon_festivals", JSON.stringify(updated));
+      return updated;
+    });
   };
   
   const handleCreate = async () => {
@@ -60,7 +69,11 @@ export default function FestivalsManagement() {
       description: newDescription
     };
     
-    setFestivals(prev => [newItem, ...prev]);
+    setFestivals(prev => {
+      const updated = [newItem, ...prev];
+      localStorage.setItem("dagbon_festivals", JSON.stringify(updated));
+      return updated;
+    });
     setNewTitle("");
     setNewLocation("");
     setNewDate("");

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { 
   Upload, 
@@ -18,21 +18,19 @@ import {
 } from "lucide-react";
 import { uploadFileToFirebase } from "@/lib/firebase";
 
-// All images currently used across the site
-const initialMedia = [
-  { id: 1, type: "image", url: "/drummer.jpg", title: "Voice of the Drums", size: "2.4 MB", date: "2026-05-11" },
-  { id: 2, type: "image", url: "/savannah-overlook.jpg", title: "The Sacred Savannah", size: "3.1 MB", date: "2026-05-11" },
-  { id: 3, type: "image", url: "/mud-hut.jpg", title: "Shrines of the Ancestors", size: "1.8 MB", date: "2026-05-11" },
-  { id: 4, type: "image", url: "/savannah-aerial.jpg", title: "Land of the Ya-Na", size: "4.2 MB", date: "2026-05-11" },
-  { id: 5, type: "image", url: "/savannah-overlook2.jpg", title: "Peaks of Dagbon", size: "2.9 MB", date: "2026-05-11" },
-  { id: 6, type: "image", url: "/damba.jpg", title: "Damba Festival", size: "1.5 MB", date: "2026-05-11" },
-  { id: 7, type: "image", url: "/fashion.jpg", title: "Smock Weavers", size: "2.1 MB", date: "2026-05-11" },
-  { id: 8, type: "image", url: "/food.jpg", title: "Tuo Zaafi", size: "1.9 MB", date: "2026-05-11" },
-  { id: 9, type: "image", url: "/hero-bg.png", title: "Generated Hero Pattern", size: "850 KB", date: "2026-05-10" },
-];
-
 export default function AdminGallery() {
-  const [mediaItems, setMediaItems] = useState(initialMedia);
+  const [mediaItems, setMediaItems] = useState<any[]>([]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("dagbon_gallery");
+    if (saved) {
+      try {
+        setMediaItems(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to parse gallery items", e);
+      }
+    }
+  }, []);
   const [filter, setFilter] = useState("all");
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
@@ -66,7 +64,11 @@ export default function AdminGallery() {
         date: new Date().toISOString().split("T")[0]
       };
       
-      setMediaItems(prev => [newItem, ...prev]);
+      setMediaItems(prev => {
+        const updated = [newItem, ...prev];
+        localStorage.setItem("dagbon_gallery", JSON.stringify(updated));
+        return updated;
+      });
       setIsUploading(false);
     } catch (err) {
       console.error("Upload error:", err);
@@ -208,7 +210,13 @@ export default function AdminGallery() {
                 <button onClick={() => alert('Editing: ' + item.title)} className="w-10 h-10 rounded-full bg-white text-primary flex items-center justify-center hover:bg-accent hover:text-white transition-colors shadow-lg cursor-pointer">
                   <Edit size={18} />
                 </button>
-                <button onClick={() => setMediaItems(prev => prev.filter(m => m.id !== item.id))} className="w-10 h-10 rounded-full bg-white text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors shadow-lg cursor-pointer">
+                <button onClick={() => {
+                  setMediaItems(prev => {
+                    const updated = prev.filter(m => m.id !== item.id);
+                    localStorage.setItem("dagbon_gallery", JSON.stringify(updated));
+                    return updated;
+                  });
+                }} className="w-10 h-10 rounded-full bg-white text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors shadow-lg cursor-pointer">
                   <Trash2 size={18} />
                 </button>
               </div>

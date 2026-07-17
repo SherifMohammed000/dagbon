@@ -14,14 +14,8 @@ import {
   Loader2,
   Pause
 } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { uploadFileToFirebase } from "@/lib/firebase";
-
-const mockMusic = [
-  { id: 1, title: "The King's Arrival", artist: "Lunsi Drummers", category: "Ceremonial", plays: "1,240", duration: "4:20" },
-  { id: 2, title: "Damba Celebration", artist: "Northern Folk", category: "Festival", plays: "850", duration: "3:45" },
-  { id: 3, title: "Savannah Winds", artist: "Xylophone Master", category: "Instrumental", plays: "2,100", duration: "5:12" },
-];
 
 const getAudioDuration = (file: File): Promise<string> => {
   return new Promise((resolve) => {
@@ -41,7 +35,18 @@ const getAudioDuration = (file: File): Promise<string> => {
 };
 
 export default function MusicManagement() {
-  const [musicItems, setMusicItems] = useState(mockMusic);
+  const [musicItems, setMusicItems] = useState<any[]>([]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("dagbon_music");
+    if (saved) {
+      try {
+        setMusicItems(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to parse music items", e);
+      }
+    }
+  }, []);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showBatchUpload, setShowBatchUpload] = useState(false);
 
@@ -79,7 +84,11 @@ export default function MusicManagement() {
         url: fileUrl // real uploaded URL
       };
 
-      setMusicItems(prev => [newTrack, ...prev]);
+      setMusicItems(prev => {
+        const updated = [newTrack, ...prev];
+        localStorage.setItem("dagbon_music", JSON.stringify(updated));
+        return updated;
+      });
       setNewTitle("");
       setNewArtist("");
       setNewCategory("Ceremonial");
@@ -92,7 +101,7 @@ export default function MusicManagement() {
     }
   };
 
-  const handlePlayPreview = (track: typeof mockMusic[0] & { url?: string }) => {
+  const handlePlayPreview = (track: any) => {
     if (!track.url) {
       alert("No audio file available for preview.");
       return;
@@ -231,19 +240,31 @@ export default function MusicManagement() {
               const files = Array.from(e.target.files || []);
               if (files.length === 0) return;
               alert(`Batch uploading ${files.length} audio files...`);
+              
+              const newTracks = [];
               for (const file of files) {
-                const url = await uploadFileToFirebase(file, `music/${Date.now()}_${file.name}`);
-                const duration = await getAudioDuration(file);
-                setMusicItems(prev => [{
-                  id: Date.now() + Math.random(),
-                  title: file.name.split(".")[0],
-                  artist: "Various Artists",
-                  category: "Fusion",
-                  plays: "0",
-                  duration,
-                  url
-                }, ...prev]);
+                try {
+                  const url = await uploadFileToFirebase(file, `music/${Date.now()}_${file.name}`);
+                  const duration = await getAudioDuration(file);
+                  newTracks.push({
+                    id: Date.now() + Math.random(),
+                    title: file.name.split(".")[0],
+                    artist: "Various Artists",
+                    category: "Fusion",
+                    plays: "0",
+                    duration,
+                    url
+                  });
+                } catch (err) {
+                  console.error("Failed to upload track during batch upload", err);
+                }
               }
+              
+              setMusicItems(prev => {
+                const updated = [...newTracks, ...prev];
+                localStorage.setItem("dagbon_music", JSON.stringify(updated));
+                return updated;
+              });
               setShowBatchUpload(false);
             }}
           />
@@ -307,7 +328,13 @@ export default function MusicManagement() {
               <button onClick={() => alert('Editing: ' + track.title)} className="p-3 rounded-xl border border-secondary/10 text-earth/30 hover:text-primary transition-all cursor-pointer">
                 <Edit2 size={18} />
               </button>
-              <button onClick={() => setMusicItems(prev => prev.filter(t => t.id !== track.id))} className="p-3 rounded-xl border border-secondary/10 text-earth/30 hover:text-red-500 transition-all cursor-pointer">
+              <button onClick={() => {
+                setMusicItems(prev => {
+                  const updated = prev.filter(t => t.id !== track.id);
+                  localStorage.setItem("dagbon_music", JSON.stringify(updated));
+                  return updated;
+                });
+              }} className="p-3 rounded-xl border border-secondary/10 text-earth/30 hover:text-red-500 transition-all cursor-pointer">
                 <Trash2 size={18} />
               </button>
             </div>
