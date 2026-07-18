@@ -21,16 +21,36 @@ const getAudioDuration = (file: File): Promise<string> => {
   return new Promise((resolve) => {
     const url = URL.createObjectURL(file);
     const audio = new Audio(url);
+    let resolved = false;
+
+    const cleanup = () => {
+      if (!resolved) {
+        resolved = true;
+        URL.revokeObjectURL(url);
+      }
+    };
+
     audio.addEventListener("loadedmetadata", () => {
+      if (resolved) return;
       const minutes = Math.floor(audio.duration / 60);
       const seconds = Math.floor(audio.duration % 60);
       resolve(`${minutes}:${seconds.toString().padStart(2, '0')}`);
-      URL.revokeObjectURL(url);
+      cleanup();
     });
+
     audio.addEventListener("error", () => {
+      if (resolved) return;
       resolve("Unknown");
-      URL.revokeObjectURL(url);
+      cleanup();
     });
+
+    // Fallback timeout in case metadata doesn't load
+    setTimeout(() => {
+      if (!resolved) {
+        resolve("Unknown");
+        cleanup();
+      }
+    }, 3000);
   });
 };
 
@@ -84,18 +104,22 @@ export default function MusicManagement() {
         url: fileUrl // real uploaded URL
       };
 
-      setMusicItems(prev => {
-        const updated = [newTrack, ...prev];
+      const updated = [newTrack, ...musicItems];
+      try {
         localStorage.setItem("dagbon_music", JSON.stringify(updated));
-        return updated;
-      });
-      setNewTitle("");
-      setNewArtist("");
-      setNewCategory("Ceremonial");
-      setAudioFile(null);
-      setShowAddForm(false);
+        setMusicItems(updated);
+        setNewTitle("");
+        setNewArtist("");
+        setNewCategory("Ceremonial");
+        setAudioFile(null);
+        setShowAddForm(false);
+      } catch (storageError) {
+        console.error("Storage error:", storageError);
+        alert("Failed to save. The audio file is likely too large for local storage. Please update your Firebase Storage rules to allow proper cloud uploads.");
+      }
     } catch (err) {
       console.error(err);
+      alert("An error occurred during upload.");
     } finally {
       setUploading(false);
     }
@@ -260,12 +284,24 @@ export default function MusicManagement() {
                 }
               }
               
+              let storageFailed = false;
               setMusicItems(prev => {
                 const updated = [...newTracks, ...prev];
-                localStorage.setItem("dagbon_music", JSON.stringify(updated));
-                return updated;
+                try {
+                  localStorage.setItem("dagbon_music", JSON.stringify(updated));
+                  return updated;
+                } catch (err) {
+                  console.error(err);
+                  storageFailed = true;
+                  return prev;
+                }
               });
-              setShowBatchUpload(false);
+              
+              if (storageFailed) {
+                alert("Batch upload failed: files too large for local storage. Please update your Firebase Storage rules to allow cloud uploads.");
+              } else {
+                setShowBatchUpload(false);
+              }
             }}
           />
           <h3 className="text-lg font-bold text-primary">Batch Upload Audio</h3>

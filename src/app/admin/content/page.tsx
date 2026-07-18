@@ -25,6 +25,7 @@ export default function ContentManagement() {
   const [newBody, setNewBody] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("dagbon_content");
@@ -45,40 +46,72 @@ export default function ContentManagement() {
     });
   };
   
-  const handleCreate = async () => {
-    if (!newTitle.trim()) return;
-    
-    setUploading(true);
-    let fileUrl = "";
-    if (selectedFile) {
-      fileUrl = await uploadFileToFirebase(
-        selectedFile, 
-        `content/${Date.now()}_${selectedFile.name}`
-      );
-    }
-    
-    const newItem = { 
-      id: Date.now(), 
-      title: newTitle, 
-      category: newCategory, 
-      status: "Published", 
-      author: "Admin", 
-      date: new Date().toISOString().split('T')[0],
-      fileUrl,
-      body: newBody
-    };
-    
-    setContentItems(prev => {
-      const updated = [newItem, ...prev];
-      localStorage.setItem("dagbon_content", JSON.stringify(updated));
-      return updated;
-    });
+  const resetForm = () => {
     setNewTitle("");
     setNewCategory("History");
     setNewBody("");
     setSelectedFile(null);
     setUploading(false);
     setShowCreateForm(false);
+    setEditingId(null);
+  };
+
+  const handleSave = async () => {
+    if (!newTitle.trim()) return;
+    
+    setUploading(true);
+    let fileUrl = "";
+    if (selectedFile) {
+      try {
+        fileUrl = await uploadFileToFirebase(
+          selectedFile, 
+          `content/${Date.now()}_${selectedFile.name}`
+        );
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    
+    setContentItems(prev => {
+      let updated;
+      if (editingId) {
+        updated = prev.map(item => {
+          if (item.id === editingId) {
+            return {
+              ...item,
+              title: newTitle,
+              category: newCategory,
+              body: newBody,
+              ...(fileUrl ? { fileUrl } : {})
+            };
+          }
+          return item;
+        });
+      } else {
+        const newItem = { 
+          id: Date.now(), 
+          title: newTitle, 
+          category: newCategory, 
+          status: "Published", 
+          author: "Admin", 
+          date: new Date().toISOString().split('T')[0],
+          fileUrl,
+          body: newBody
+        };
+        updated = [newItem, ...prev];
+      }
+      
+      try {
+        localStorage.setItem("dagbon_content", JSON.stringify(updated));
+        return updated;
+      } catch (err) {
+        console.error(err);
+        alert("Failed to save post. Local storage quota exceeded.");
+        return prev;
+      }
+    });
+    
+    resetForm();
   };
 
   return (
@@ -88,14 +121,23 @@ export default function ContentManagement() {
           <h1 className="text-3xl font-serif text-primary mb-2">Cultural Content</h1>
           <p className="text-earth/50">Create and manage historical articles, stories, and cultural posts.</p>
         </div>
-        <button onClick={() => setShowCreateForm(!showCreateForm)} className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-secondary text-white font-bold uppercase tracking-widest text-xs hover:bg-primary transition-all shadow-lg shadow-secondary/20 cursor-pointer">
-          <Plus size={18} /> Create New Post
+        <button 
+          onClick={() => {
+            if (showCreateForm) {
+              resetForm();
+            } else {
+              setShowCreateForm(true);
+            }
+          }} 
+          className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-secondary text-white font-bold uppercase tracking-widest text-xs hover:bg-primary transition-all shadow-lg shadow-secondary/20 cursor-pointer"
+        >
+          <Plus size={18} /> {showCreateForm ? "Cancel" : "Create New Post"}
         </button>
       </div>
 
       {showCreateForm && (
         <div className="p-6 rounded-3xl bg-white border border-secondary/10 shadow-lg space-y-4">
-          <h3 className="font-serif text-lg text-primary">Create New Post</h3>
+          <h3 className="font-serif text-lg text-primary">{editingId ? "Edit Post" : "Create New Post"}</h3>
           
           <div className="space-y-1">
             <label className="text-[10px] uppercase font-bold tracking-wider text-earth/50">Post Title</label>
@@ -145,26 +187,21 @@ export default function ContentManagement() {
 
           <div className="flex gap-3 pt-2">
             <button 
-              onClick={handleCreate} 
+              onClick={handleSave} 
               disabled={uploading}
               className="px-6 py-3 rounded-xl bg-secondary text-white font-bold text-xs uppercase tracking-widest hover:bg-primary transition-all cursor-pointer flex items-center gap-2 disabled:opacity-50"
             >
               {uploading ? (
                 <>
                   <Loader2 size={14} className="animate-spin" />
-                  Uploading...
+                  Saving...
                 </>
               ) : (
-                "Publish"
+                editingId ? "Save Changes" : "Publish"
               )}
             </button>
             <button 
-              onClick={() => {
-                setShowCreateForm(false);
-                setSelectedFile(null);
-                setNewBody("");
-                setNewTitle("");
-              }} 
+              onClick={resetForm} 
               disabled={uploading}
               className="px-6 py-3 rounded-xl border border-secondary/10 text-earth/60 font-bold text-xs uppercase tracking-widest hover:bg-sand/30 transition-all cursor-pointer disabled:opacity-50"
             >
@@ -248,7 +285,19 @@ export default function ContentManagement() {
                 <td className="px-8 py-6 text-right">
                   <div className="flex items-center justify-end gap-2">
                     <button onClick={() => alert('Preview: ' + item.title)} className="p-2 text-earth/30 hover:text-secondary transition-colors cursor-pointer"><Eye size={16} /></button>
-                    <button onClick={() => alert('Editing: ' + item.title)} className="p-2 text-earth/30 hover:text-primary transition-colors cursor-pointer"><Edit2 size={16} /></button>
+                    <button 
+                      onClick={() => {
+                        setEditingId(item.id);
+                        setNewTitle(item.title);
+                        setNewCategory(item.category);
+                        setNewBody(item.body || "");
+                        setShowCreateForm(true);
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }} 
+                      className="p-2 text-earth/30 hover:text-primary transition-colors cursor-pointer"
+                    >
+                      <Edit2 size={16} />
+                    </button>
                     <button onClick={() => handleDelete(item.id)} className="p-2 text-earth/30 hover:text-red-500 transition-colors cursor-pointer"><Trash2 size={16} /></button>
                     <button className="p-2 text-earth/30 hover:text-primary transition-colors"><MoreVertical size={16} /></button>
                   </div>
