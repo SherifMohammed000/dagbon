@@ -285,19 +285,7 @@ export default function ContentManagement() {
                 <td className="px-8 py-6 text-right">
                   <div className="flex items-center justify-end gap-2">
                     <button onClick={() => alert('Preview: ' + item.title)} className="p-2 text-earth/30 hover:text-secondary transition-colors cursor-pointer"><Eye size={16} /></button>
-                    <button 
-                      onClick={() => {
-                        setEditingId(item.id);
-                        setNewTitle(item.title);
-                        setNewCategory(item.category);
-                        setNewBody(item.body || "");
-                        setShowCreateForm(true);
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                      }} 
-                      className="p-2 text-earth/30 hover:text-primary transition-colors cursor-pointer"
-                    >
-                      <Edit2 size={16} />
-                    </button>
+
                     <button onClick={() => handleDelete(item.id)} className="p-2 text-earth/30 hover:text-red-500 transition-colors cursor-pointer"><Trash2 size={16} /></button>
                     <button className="p-2 text-earth/30 hover:text-primary transition-colors"><MoreVertical size={16} /></button>
                   </div>

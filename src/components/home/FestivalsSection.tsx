@@ -7,14 +7,34 @@ import FestivalModal from './FestivalModal';
 
 type Festival = { name: string; date: string; location: string; description: string; color: string };
 
+const defaultFestivals: Festival[] = [
+  {
+    name: "Damba Festival",
+    date: "December 12, 2026",
+    location: "Yendi, Northern Region",
+    description: "The most significant festival in Dagbon, marking the birth and naming of Prophet Muhammad. It features majestic equestrian displays, drumming, and dancing.",
+    color: "bg-orange-500"
+  },
+  {
+    name: "Bugum Chugu (Fire Festival)",
+    date: "August 24, 2026",
+    location: "Across Dagbon Kingdom",
+    description: "A spectacular night festival marking the beginning of the lunar year. Locals carry flaming torches in a dramatic procession through the streets.",
+    color: "bg-red-500"
+  }
+];
+
 function loadFestivals(): Festival[] {
   if (typeof window !== "undefined") {
     const stored = localStorage.getItem("dagbon_festivals");
     if (stored) {
-      try { return JSON.parse(stored); } catch {}
+      try { 
+        const parsed = JSON.parse(stored);
+        if (parsed.length > 0) return parsed;
+      } catch {}
     }
   }
-  return [];
+  return defaultFestivals;
 }
 
 export default function FestivalsSection() {

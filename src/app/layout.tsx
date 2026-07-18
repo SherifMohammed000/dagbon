@@ -19,7 +19,6 @@ export default function RootLayout({
       <body className="antialiased pattern-bg overflow-x-hidden">
         <Navigation />
         {children}
-        <CulturalGuide />
       </body>
     </html>
   );

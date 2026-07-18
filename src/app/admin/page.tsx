@@ -21,7 +21,8 @@ export default function AdminDashboard() {
     content: 0,
     music: 0,
     gallery: 0,
-    festivals: 0
+    festivals: 0,
+    users: 0
   });
   const [recentContent, setRecentContent] = useState<any[]>([]);
   const [upcomingFestivals, setUpcomingFestivals] = useState<any[]>([]);
@@ -44,11 +45,16 @@ export default function AdminDashboard() {
       const savedFestivals = localStorage.getItem("dagbon_festivals");
       const festivals = savedFestivals ? JSON.parse(savedFestivals) : [];
 
+      // 5. Users
+      const savedUsers = localStorage.getItem("dagbon_users");
+      const users = savedUsers ? JSON.parse(savedUsers) : [];
+
       setCounts({
         content: content.length,
         music: music.length,
         gallery: gallery.length,
-        festivals: festivals.length
+        festivals: festivals.length,
+        users: users.length
       });
 
       setRecentContent(content.slice(0, 3));
@@ -77,10 +83,10 @@ export default function AdminDashboard() {
   };
 
   const stats = [
-    { name: "Total Visitors", value: "12.4k", change: "+14%", icon: <Eye />, color: "text-blue-500", bg: "bg-blue-50" },
+    { name: "Total Visitors", value: "0", change: "0%", icon: <Eye />, color: "text-blue-500", bg: "bg-blue-50" },
     { name: "Content Pieces", value: counts.content.toString(), change: counts.content > 0 ? "+100%" : "0%", icon: <FileText />, color: "text-orange-500", bg: "bg-orange-50" },
     { name: "Music Tracks", value: counts.music.toString(), change: counts.music > 0 ? "+100%" : "0%", icon: <Music />, color: "text-purple-500", bg: "bg-purple-50" },
-    { name: "Active Users", value: "892", change: "-2%", icon: <Users />, color: "text-green-500", bg: "bg-green-50" },
+    { name: "Active Users", value: counts.users.toString(), change: counts.users > 0 ? "+100%" : "0%", icon: <Users />, color: "text-green-500", bg: "bg-green-50" },
   ];
 
   return (
