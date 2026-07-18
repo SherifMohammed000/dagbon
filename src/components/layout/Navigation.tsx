@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Search, Globe, ChevronRight } from "lucide-react";
 import Link from "next/link";
@@ -38,22 +39,13 @@ export default function Navigation() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isExploreOpen, setIsExploreOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [user, setUser] = useState<any>(null);
+  const { user, signOut } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
     };
     window.addEventListener("scroll", handleScroll);
-
-    const session = localStorage.getItem("dagbon_auth");
-    if (session) {
-      try {
-        setUser(JSON.parse(session));
-      } catch (e) {
-        console.error(e);
-      }
-    }
 
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -124,12 +116,20 @@ export default function Navigation() {
           </button>
           
           {user ? (
-            <Link 
-              href={user.isAdmin ? "/admin" : "/auth"}
-              className="hidden md:inline-block text-xs font-bold uppercase tracking-widest text-accent hover:text-white transition-colors"
-            >
-              {user.isAdmin ? "Dashboard" : user.name.split(" ")[0]}
-            </Link>
+            <div className="hidden md:flex items-center gap-4">
+              <Link 
+                href={user.isAdmin ? "/admin" : "#"}
+                className="text-xs font-bold uppercase tracking-widest text-accent hover:text-white transition-colors"
+              >
+                {user.isAdmin ? "Dashboard" : user.name.split(" ")[0]}
+              </Link>
+              <button 
+                onClick={signOut}
+                className="text-xs font-bold uppercase tracking-widest text-white/50 hover:text-red-400 transition-colors cursor-pointer"
+              >
+                Sign Out
+              </button>
+            </div>
           ) : (
             <Link 
               href="/auth" 
@@ -178,13 +178,21 @@ export default function Navigation() {
               <hr className="border-white/10" />
               
               {user ? (
-                <Link
-                  href={user.isAdmin ? "/admin" : "/auth"}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="w-full text-center py-4 rounded-xl border border-accent/20 text-accent font-bold uppercase tracking-widest block text-sm"
-                >
-                  {user.isAdmin ? "Admin Dashboard" : `Hello, ${user.name}`}
-                </Link>
+                <div className="flex flex-col gap-2">
+                  <Link
+                    href={user.isAdmin ? "/admin" : "#"}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="w-full text-center py-4 rounded-xl border border-accent/20 text-accent font-bold uppercase tracking-widest block text-sm"
+                  >
+                    {user.isAdmin ? "Admin Dashboard" : `Hello, ${user.name}`}
+                  </Link>
+                  <button
+                    onClick={() => { signOut(); setIsMobileMenuOpen(false); }}
+                    className="w-full text-center py-4 rounded-xl border border-red-500/20 text-red-400 font-bold uppercase tracking-widest block text-sm cursor-pointer"
+                  >
+                    Sign Out
+                  </button>
+                </div>
               ) : (
                 <Link
                   href="/auth"

@@ -13,7 +13,8 @@ import {
   Settings, 
   Search, 
   Bell,
-  LogOut
+  LogOut,
+  MessageSquare
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -25,6 +26,7 @@ const menuItems = [
   { name: "Music Library", icon: <Music size={20} />, href: "/admin/music" },
   { name: "Media Gallery", icon: <ImageIcon size={20} />, href: "/admin/gallery" },
   { name: "Festivals", icon: <Calendar size={20} />, href: "/admin/festivals" },
+  { name: "Suggestions", icon: <MessageSquare size={20} />, href: "/admin/suggestions" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

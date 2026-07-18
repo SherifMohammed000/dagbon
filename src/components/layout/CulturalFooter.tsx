@@ -52,9 +52,6 @@ export default function CulturalFooter() {
             <h4 className="font-serif text-lg mb-8 text-accent">Resources</h4>
             <ul className="space-y-4 text-sand/70 text-sm">
               <li className="flex flex-col gap-2">
-                <Link href="/admin" className="px-4 py-2 rounded-lg bg-accent/10 border border-accent/20 text-accent hover:bg-accent hover:text-primary transition-all inline-block font-bold text-center">
-                  Admin Dashboard
-                </Link>
                 <Link href="/auth" className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/80 hover:bg-accent hover:text-primary transition-all inline-block font-bold text-center">
                   Join / Sign In
                 </Link>
