@@ -92,7 +92,7 @@ export async function saveUserToFirebase(userData: {
 
   // 2. Save to Firestore
   if (!db) {
-    console.warn("Firestore database not initialized.");
+    console.warn("Firestore database not initialized. Please ensure Firestore Database is created in Firebase Console.");
     return;
   }
   try {
@@ -110,14 +110,17 @@ export async function saveUserToFirebase(userData: {
       },
       { merge: true }
     );
-    console.log(`User ${cleanEmail} successfully saved to Firebase Firestore.`);
-  } catch (error) {
+    console.log(`User ${cleanEmail} successfully saved to Firebase Firestore (users/${docId}).`);
+  } catch (error: any) {
     console.error("Firebase save user error:", error);
+    if (error?.code === "permission-denied" || error?.message?.includes("permission")) {
+      console.warn("Firestore permission-denied. Please check Rules tab in Firebase Console for project 'dagbon-her'.");
+    }
   }
 }
 
 // ---------------------------------------------------------------------------
-// Firestore Posts Engine (replaces localStorage for articles/posts)
+// Firestore Posts Engine (dual-persisted to Firestore & local storage)
 // ---------------------------------------------------------------------------
 
 export async function savePostToFirebase(post: {
@@ -143,13 +146,37 @@ export async function savePostToFirebase(post: {
     timestamp: post.id ? Number(post.id) : Date.now(),
   };
 
+  // 1. Always save locally to dagbon_content so it's 100% visible immediately
+  if (typeof window !== "undefined") {
+    try {
+      const raw = localStorage.getItem("dagbon_content");
+      const list: any[] = raw ? JSON.parse(raw) : [];
+      const idx = list.findIndex((p) => String(p.id) === docId);
+      if (idx >= 0) {
+        list[idx] = { ...list[idx], ...data };
+      } else {
+        list.unshift(data);
+      }
+      localStorage.setItem("dagbon_content", JSON.stringify(list));
+      window.dispatchEvent(new Event("storage"));
+    } catch (e) {
+      console.error("Local storage post save error:", e);
+    }
+  }
+
+  // 2. Save to Firebase Firestore
   if (db) {
     try {
       await setDoc(doc(db, "posts", docId), data, { merge: true });
-      console.log(`Post "${post.title}" saved to Firebase Firestore (posts/${docId}).`);
-    } catch (e) {
+      console.log(`Post "${post.title}" successfully saved to Firebase Firestore (posts/${docId}).`);
+    } catch (e: any) {
       console.error("Firestore save post error:", e);
+      if (e?.code === "permission-denied" || e?.message?.includes("permission")) {
+        alert("Firebase Security Rules Warning: Cloud Firestore rejected writing the document due to security rules. Please go to your Firebase Console (dagbon-her) -> Firestore Database -> Rules tab, and update rules to:\n\nallow read, write: if true;");
+      }
     }
+  } else {
+    console.warn("Firestore db instance is null. Make sure Cloud Firestore is created in Firebase Console.");
   }
   return docId;
 }
@@ -170,6 +197,23 @@ export async function fetchPostsFromFirebase(): Promise<any[]> {
 
 export async function deletePostFromFirebase(id: string | number): Promise<void> {
   const docId = String(id);
+
+  // 1. Delete locally
+  if (typeof window !== "undefined") {
+    try {
+      const raw = localStorage.getItem("dagbon_content");
+      if (raw) {
+        const list: any[] = JSON.parse(raw);
+        const updated = list.filter((p) => String(p.id) !== docId);
+        localStorage.setItem("dagbon_content", JSON.stringify(updated));
+        window.dispatchEvent(new Event("storage"));
+      }
+    } catch (e) {
+      console.error("Local post delete error:", e);
+    }
+  }
+
+  // 2. Delete from Firestore
   if (db) {
     try {
       await deleteDoc(doc(db, "posts", docId));
@@ -181,22 +225,61 @@ export async function deletePostFromFirebase(id: string | number): Promise<void>
 }
 
 export function subscribePostsFromFirebase(callback: (posts: any[]) => void): () => void {
+  const getLocalPosts = (): any[] => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = localStorage.getItem("dagbon_content");
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const mergePosts = (remotePosts: any[]): any[] => {
+    const local = getLocalPosts();
+    const map = new Map<string, any>();
+    remotePosts.forEach((p) => map.set(String(p.id), p));
+    local.forEach((p) => {
+      if (!map.has(String(p.id))) {
+        map.set(String(p.id), p);
+      }
+    });
+    const combined = Array.from(map.values());
+    combined.sort((a, b) => (b.timestamp || Number(b.id) || 0) - (a.timestamp || Number(a.id) || 0));
+    return combined;
+  };
+
+  // Immediately callback with local items so UI renders instantaneously
+  callback(getLocalPosts());
+
   if (!db) {
-    callback([]);
     return () => {};
   }
+
   try {
-    const unsubscribe = onSnapshot(collection(db, "posts"), (snapshot) => {
-      const posts: any[] = [];
-      snapshot.forEach((d) => posts.push(d.data()));
-      posts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-      callback(posts);
-    }, (err) => {
-      console.error("Firestore subscribe posts error:", err);
-    });
+    const unsubscribe = onSnapshot(
+      collection(db, "posts"),
+      (snapshot) => {
+        const remote: any[] = [];
+        snapshot.forEach((d) => remote.push(d.data()));
+        callback(mergePosts(remote));
+      },
+      (err) => {
+        console.error("Firestore subscribe posts error:", err);
+        callback(getLocalPosts());
+      }
+    );
+
+    // Also listen to local storage changes
+    if (typeof window !== "undefined") {
+      const handleStorage = () => callback(getLocalPosts());
+      window.addEventListener("storage", handleStorage);
+    }
+
     return unsubscribe;
   } catch (e) {
     console.error("Firestore subscribe error:", e);
+    callback(getLocalPosts());
     return () => {};
   }
 }
