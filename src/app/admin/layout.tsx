@@ -177,17 +177,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       </div>
                     ) : (
                       notifications.map((n) => (
-                        <div key={n.id} className="p-4 hover:bg-sand/10 transition-colors">
-                          <p className="text-xs text-primary leading-relaxed font-medium mb-1">{n.text}</p>
+                        <button
+                          key={n.id}
+                          onClick={() => {
+                            setShowNotifications(false);
+                            router.push(n.targetUrl || "/admin");
+                          }}
+                          className="w-full text-left p-4 hover:bg-sand/20 transition-all cursor-pointer group block"
+                        >
+                          <p className="text-xs text-primary leading-relaxed font-medium mb-1 group-hover:text-secondary transition-colors">{n.text}</p>
                           <div className="flex items-center justify-between">
-                            <span className="text-[9px] font-bold uppercase tracking-widest text-secondary">
-                              {n.type}
+                            <span className="text-[9px] font-bold uppercase tracking-widest text-secondary group-hover:underline">
+                              {n.type} →
                             </span>
                             <span className="text-[9px] text-earth/40 uppercase tracking-wider font-semibold">
                               {getTimeAgo(n.timestamp)}
                             </span>
                           </div>
-                        </div>
+                        </button>
                       ))
                     )}
                   </div>

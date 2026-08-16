@@ -19,6 +19,7 @@ import { fetchUsersFromFirebase } from "@/lib/firebase";
 export default function AdminDashboard() {
   const router = useRouter();
   const [showCalendarPopup, setShowCalendarPopup] = useState(false);
+  const [visitorCount, setVisitorCount] = useState<number>(0);
   const [counts, setCounts] = useState({
     content: 0,
     music: 0,
@@ -31,6 +32,10 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     try {
+      // 0. Visitor count
+      const rawVisitors = localStorage.getItem("dagbon_visitors_count");
+      if (rawVisitors) setVisitorCount(parseInt(rawVisitors, 10));
+
       // 1. Content
       const savedContent = localStorage.getItem("dagbon_content");
       const content = savedContent ? JSON.parse(savedContent) : [];
@@ -47,7 +52,7 @@ export default function AdminDashboard() {
       const savedFestivals = localStorage.getItem("dagbon_festivals");
       const festivals = savedFestivals ? JSON.parse(savedFestivals) : [];
 
-      // 5. Users
+      // 5. Users (registered users + admin)
       const savedUsers = localStorage.getItem("dagbon_users");
       const users = savedUsers ? JSON.parse(savedUsers) : [];
 
@@ -56,7 +61,7 @@ export default function AdminDashboard() {
         music: music.length,
         gallery: gallery.length,
         festivals: festivals.length,
-        users: users.length
+        users: Math.max(users.length, 1) // At least 1 (Admin)
       });
 
       // Sync user count from Firebase Firestore
@@ -92,7 +97,7 @@ export default function AdminDashboard() {
   };
 
   const stats = [
-    { name: "Total Visitors", value: "0", change: "0%", icon: <Eye />, color: "text-blue-500", bg: "bg-blue-50" },
+    { name: "Total Visitors", value: visitorCount.toString(), change: visitorCount > 0 ? "+100%" : "0%", icon: <Eye />, color: "text-blue-500", bg: "bg-blue-50" },
     { name: "Content Pieces", value: counts.content.toString(), change: counts.content > 0 ? "+100%" : "0%", icon: <FileText />, color: "text-orange-500", bg: "bg-orange-50" },
     { name: "Music Tracks", value: counts.music.toString(), change: counts.music > 0 ? "+100%" : "0%", icon: <Music />, color: "text-purple-500", bg: "bg-purple-50" },
     { name: "Active Users", value: counts.users.toString(), change: counts.users > 0 ? "+100%" : "0%", icon: <Users />, color: "text-green-500", bg: "bg-green-50" },

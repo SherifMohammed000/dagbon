@@ -4,7 +4,18 @@ export type AdminNotification = {
   type: "suggestion" | "comment" | "action";
   timestamp: number;
   timeStr: string;
+  targetUrl: string;
 };
+
+export function getTargetUrl(text: string, type: "suggestion" | "comment" | "action"): string {
+  if (type === "suggestion") return "/admin/suggestions";
+  if (type === "comment") return "/admin/content";
+  const lower = text.toLowerCase();
+  if (lower.includes("track") || lower.includes("song") || lower.includes("music")) return "/admin/music";
+  if (lower.includes("media") || lower.includes("image") || lower.includes("video") || lower.includes("gallery")) return "/admin/gallery";
+  if (lower.includes("festival")) return "/admin/festivals";
+  return "/admin/content";
+}
 
 export function addNotification(text: string, type: "suggestion" | "comment" | "action") {
   if (typeof window === "undefined") return;
@@ -17,6 +28,7 @@ export function addNotification(text: string, type: "suggestion" | "comment" | "
       type,
       timestamp: Date.now(),
       timeStr: "Just now",
+      targetUrl: getTargetUrl(text, type),
     };
     // Keep max 30 recent notifications
     const updated = [item, ...list].slice(0, 30);
@@ -36,13 +48,17 @@ export function getNotifications(): AdminNotification[] {
     // Also collect suggestions from localStorage
     const rawSuggs = localStorage.getItem("dagbon_suggestions");
     const suggs: any[] = rawSuggs ? JSON.parse(rawSuggs) : [];
-    const suggNotifs: AdminNotification[] = suggs.map((s) => ({
-      id: `sugg_${s.id}`,
-      text: `Suggestion from ${s.author}: "${s.text.length > 50 ? s.text.slice(0, 50) + "..." : s.text}"`,
-      type: "suggestion",
-      timestamp: s.id || Date.now(),
-      timeStr: s.date || "Recent",
-    }));
+    const suggNotifs: AdminNotification[] = suggs.map((s) => {
+      const text = `Suggestion from ${s.author}: "${s.text.length > 50 ? s.text.slice(0, 50) + "..." : s.text}"`;
+      return {
+        id: `sugg_${s.id}`,
+        text,
+        type: "suggestion" as const,
+        timestamp: s.id || Date.now(),
+        timeStr: s.date || "Recent",
+        targetUrl: "/admin/suggestions",
+      };
+    });
 
     // Merge and deduplicate by text/id, sort descending by timestamp
     const all = [...notifs, ...suggNotifs];
@@ -52,6 +68,10 @@ export function getNotifications(): AdminNotification[] {
     for (const item of all) {
       if (!seen.has(item.id)) {
         seen.add(item.id);
+        // Ensure item has targetUrl even if from legacy stored items
+        if (!item.targetUrl) {
+          item.targetUrl = getTargetUrl(item.text, item.type);
+        }
         unique.push(item);
       }
     }

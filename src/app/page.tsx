@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect } from "react";
 import Hero from "@/components/home/Hero";
 import AboutDagbon from "@/components/home/AboutDagbon";
 import PostsSection from "@/components/home/PostsSection";
@@ -11,6 +14,13 @@ import SuggestionsButton from "@/components/home/SuggestionsButton";
 import CulturalFooter from "@/components/layout/CulturalFooter";
 
 export default function Home() {
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const current = parseInt(localStorage.getItem("dagbon_visitors_count") || "0", 10);
+      localStorage.setItem("dagbon_visitors_count", (current + 1).toString());
+    }
+  }, []);
+
   return (
     <main className="min-h-screen">
       <Hero />
