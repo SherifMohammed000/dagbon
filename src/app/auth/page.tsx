@@ -48,6 +48,7 @@ export default function AuthPage() {
           token: "admin-session-token",
         };
         localStorage.setItem("dagbon_auth", JSON.stringify(session));
+        window.dispatchEvent(new Event("storage"));
         router.push("/admin");
         return;
       }
@@ -67,6 +68,7 @@ export default function AuthPage() {
           token: "user-session-token",
         };
         localStorage.setItem("dagbon_auth", JSON.stringify(session));
+        window.dispatchEvent(new Event("storage"));
         router.push("/");
       } else {
         setError("Invalid email or password.");

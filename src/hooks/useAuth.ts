@@ -23,7 +23,11 @@ export function useAuth() {
     };
     read();
     window.addEventListener("storage", read);
-    return () => window.removeEventListener("storage", read);
+    window.addEventListener("focus", read);
+    return () => {
+      window.removeEventListener("storage", read);
+      window.removeEventListener("focus", read);
+    };
   }, []);
 
   const signOut = () => {
