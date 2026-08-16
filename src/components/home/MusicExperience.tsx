@@ -8,14 +8,41 @@ import { getFileURL } from "@/lib/firebase";
 
 type Track = { title: string; artist: string; category: string; duration: string; url: string };
 
+const defaultTracks: Track[] = [
+  {
+    title: "Damba Festival Rhythms",
+    artist: "Yendi Royal Drummers",
+    category: "Ceremonial",
+    duration: "4:15",
+    url: ""
+  },
+  {
+    title: "Lunga & Gungon Talking Drums",
+    artist: "Savelugu Master Drummers",
+    category: "Instrumental",
+    duration: "3:45",
+    url: ""
+  },
+  {
+    title: "Baamaaya Ancestral Chants",
+    artist: "Dagbon Cultural Troupe",
+    category: "Festival",
+    duration: "5:20",
+    url: ""
+  }
+];
+
 function loadTracks(): Track[] {
   if (typeof window !== "undefined") {
     const stored = localStorage.getItem("dagbon_music");
     if (stored) {
-      try { return JSON.parse(stored); } catch {}
+      try {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {}
     }
   }
-  return [];
+  return defaultTracks;
 }
 
 export default function MusicExperience() {
@@ -24,11 +51,16 @@ export default function MusicExperience() {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  // Sync when admin saves changes in another tab
+  // Sync when admin saves changes in another tab or window
   useEffect(() => {
     const handler = () => setTracks(loadTracks());
+    handler();
     window.addEventListener("storage", handler);
-    return () => window.removeEventListener("storage", handler);
+    window.addEventListener("focus", handler);
+    return () => {
+      window.removeEventListener("storage", handler);
+      window.removeEventListener("focus", handler);
+    };
   }, []);
 
   // Keep currentTrack in bounds if tracks list shrinks

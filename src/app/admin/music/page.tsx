@@ -108,6 +108,7 @@ export default function MusicManagement() {
       const updated = [newTrack, ...musicItems];
       try {
         localStorage.setItem("dagbon_music", JSON.stringify(updated));
+        window.dispatchEvent(new Event("storage"));
         setMusicItems(updated);
         addNotification(`Added new track: "${newTitle}" by ${newArtist}`, "action");
         setNewTitle("");
@@ -292,6 +293,7 @@ export default function MusicManagement() {
                 const updated = [...newTracks, ...prev];
                 try {
                   localStorage.setItem("dagbon_music", JSON.stringify(updated));
+                  window.dispatchEvent(new Event("storage"));
                   return updated;
                 } catch (err) {
                   console.error(err);
@@ -301,7 +303,7 @@ export default function MusicManagement() {
               });
               
               if (storageFailed) {
-                alert("Batch upload failed: files too large for local storage. Please update your Firebase Storage rules to allow cloud uploads.");
+                alert("Batch upload failed: storage quota exceeded.");
               } else {
                 setShowBatchUpload(false);
               }
@@ -368,12 +370,15 @@ export default function MusicManagement() {
                 <Edit2 size={18} />
               </button>
               <button onClick={() => {
-                setMusicItems(prev => {
-                  const updated = prev.filter(t => t.id !== track.id);
-                  localStorage.setItem("dagbon_music", JSON.stringify(updated));
-                  return updated;
-                });
-              }} className="p-3 rounded-xl border border-secondary/10 text-earth/30 hover:text-red-500 transition-all cursor-pointer">
+                if (window.confirm(`Are you sure you want to delete "${track.title}"?`)) {
+                  setMusicItems(prev => {
+                    const updated = prev.filter(t => t.id !== track.id);
+                    localStorage.setItem("dagbon_music", JSON.stringify(updated));
+                    window.dispatchEvent(new Event("storage"));
+                    return updated;
+                  });
+                }
+              }} className="p-3 rounded-xl border border-secondary/10 text-earth/30 hover:text-red-500 transition-all cursor-pointer" title="Delete Track">
                 <Trash2 size={18} />
               </button>
             </div>
