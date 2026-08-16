@@ -46,18 +46,28 @@ export { db, auth, googleProvider };
  * Trigger Google Popup Sign In and return user info
  */
 export async function signInWithGoogleFirebase(): Promise<{ name: string; email: string; isAdmin: boolean }> {
-  if (typeof window === "undefined" || !auth || !googleProvider) {
+  if (typeof window === "undefined") {
     throw new Error("Google Sign-In is unavailable on server side.");
   }
-  const result = await signInWithPopup(auth, googleProvider);
-  const user = result.user;
-  const userData = {
-    name: user.displayName || user.email?.split("@")[0] || "Google User",
-    email: (user.email || "").toLowerCase(),
-    isAdmin: user.email?.toLowerCase() === "admin@dagbon.com",
-  };
-  await saveUserToFirebase(userData);
-  return userData;
+  
+  const currentAuth = auth || getAuth(app);
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+
+  try {
+    const result = await signInWithPopup(currentAuth, provider);
+    const user = result.user;
+    const userData = {
+      name: user.displayName || user.email?.split("@")[0] || "Google User",
+      email: (user.email || "").toLowerCase(),
+      isAdmin: user.email?.toLowerCase() === "admin@dagbon.com",
+    };
+    await saveUserToFirebase(userData);
+    return userData;
+  } catch (error: any) {
+    console.error("signInWithPopup error:", error?.code, error?.message);
+    throw error;
+  }
 }
 
 /**
