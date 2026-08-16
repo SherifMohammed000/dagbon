@@ -20,7 +20,12 @@ type Post = {
 function loadPosts(): Post[] {
   if (typeof window !== "undefined") {
     const raw = localStorage.getItem("dagbon_content");
-    if (raw) { try { return JSON.parse(raw); } catch {} }
+    if (raw) { 
+      try { 
+        const parsed = JSON.parse(raw); 
+        if (Array.isArray(parsed)) return parsed;
+      } catch {} 
+    }
   }
   return [];
 }
@@ -163,9 +168,7 @@ export default function PostsSection() {
     };
   }, []);
 
-  if (posts.filter((p) => p.status !== "Draft").length === 0) return null;
-
-  const published = posts.filter((p) => p.status !== "Draft");
+  const published = posts.filter((p) => !p.status || p.status !== "Draft");
 
   return (
     <section id="posts" className="py-24 bg-white">
@@ -185,7 +188,16 @@ export default function PostsSection() {
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+        {published.length === 0 ? (
+          <div className="max-w-md mx-auto p-8 rounded-3xl bg-sand/30 border border-secondary/10 text-center">
+            <FileText className="w-12 h-12 text-secondary mx-auto mb-4 opacity-60" />
+            <h3 className="text-lg font-bold text-primary mb-2">No Published Articles Yet</h3>
+            <p className="text-xs text-earth/60 leading-relaxed">
+              Articles and cultural stories will appear here as soon as published by the admin.
+            </p>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
           {published.map((post, i) => {
             const isExpanded = expandedId === post.id;
             const count = commentCount(post.id);
@@ -277,6 +289,7 @@ export default function PostsSection() {
             );
           })}
         </div>
+        )}
       </div>
     </section>
   );

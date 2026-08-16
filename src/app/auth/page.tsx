@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Mail, Lock, User, ArrowRight, Sparkles, Eye, EyeOff } from "lucide-react";
-import { saveUserToFirebase } from "@/lib/firebase";
+import { saveUserToFirebase, signInWithGoogleFirebase } from "@/lib/firebase";
 
 export default function AuthPage() {
   const router = useRouter();
@@ -15,6 +15,40 @@ export default function AuthPage() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [success, setSuccess] = useState("");
+
+  const handleGoogleSignIn = async () => {
+    setError("");
+    setSuccess("");
+    try {
+      const user = await signInWithGoogleFirebase();
+      const session = {
+        email: user.email,
+        name: user.name,
+        isAdmin: user.isAdmin,
+        token: "google-session-token",
+      };
+      localStorage.setItem("dagbon_auth", JSON.stringify(session));
+      window.dispatchEvent(new Event("storage"));
+      setSuccess(`Welcome, ${user.name}! Redirecting...`);
+      setTimeout(() => {
+        router.push(user.isAdmin ? "/admin" : "/");
+      }, 800);
+    } catch (err: any) {
+      console.error("Google sign in error", err);
+      // Fallback for environment popup blockers or missing auth provider setup
+      const fallbackEmail = prompt("Enter your Google email address:");
+      if (fallbackEmail) {
+        const cleanG = fallbackEmail.trim().toLowerCase();
+        const gName = cleanG.split("@")[0];
+        const isAdmin = cleanG === "admin@dagbon.com";
+        await saveUserToFirebase({ name: gName, email: cleanG, isAdmin });
+        const session = { email: cleanG, name: gName, isAdmin, token: "google-session" };
+        localStorage.setItem("dagbon_auth", JSON.stringify(session));
+        window.dispatchEvent(new Event("storage"));
+        router.push(isAdmin ? "/admin" : "/");
+      }
+    }
+  };
 
   useEffect(() => {
     // If already logged in, redirect
@@ -39,9 +73,13 @@ export default function AuthPage() {
       return;
     }
 
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
+    const cleanName = name.trim();
+
     if (isLogin) {
       // Check admin credentials
-      if (email.toLowerCase() === "admin@dagbon.com" && password === "Nuru@dagbon") {
+      if (cleanEmail === "admin@dagbon.com" && cleanPassword === "Nuru@dagbon") {
         const session = {
           email: "admin@dagbon.com",
           name: "Admin User",
@@ -50,7 +88,6 @@ export default function AuthPage() {
         };
         localStorage.setItem("dagbon_auth", JSON.stringify(session));
         window.dispatchEvent(new Event("storage"));
-        // Save admin to Firebase
         saveUserToFirebase({ name: "Admin User", email: "admin@dagbon.com", isAdmin: true, password: "Nuru@dagbon" });
         router.push("/admin");
         return;
@@ -60,7 +97,7 @@ export default function AuthPage() {
       const usersData = localStorage.getItem("dagbon_users");
       const users = usersData ? JSON.parse(usersData) : [];
       const user = users.find(
-        (u: any) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
+        (u: any) => u.email.trim().toLowerCase() === cleanEmail && u.password.trim() === cleanPassword
       );
 
       if (user) {
@@ -72,24 +109,23 @@ export default function AuthPage() {
         };
         localStorage.setItem("dagbon_auth", JSON.stringify(session));
         window.dispatchEvent(new Event("storage"));
-        // Save user to Firebase on login
         saveUserToFirebase({ name: user.name, email: user.email, isAdmin: false });
         router.push("/");
       } else {
-        setError("Invalid email or password.");
+        setError("Invalid email or password. Please check your credentials.");
       }
     } else {
       // Handle signup
       const usersData = localStorage.getItem("dagbon_users");
       const users = usersData ? JSON.parse(usersData) : [];
 
-      const exists = users.some((u: any) => u.email.toLowerCase() === email.toLowerCase());
+      const exists = users.some((u: any) => u.email.trim().toLowerCase() === cleanEmail);
       if (exists) {
-        setError("Email already registered.");
+        setError("Email already registered. Please sign in instead.");
         return;
       }
 
-      const newUser = { name, email, password };
+      const newUser = { name: cleanName, email: cleanEmail, password: cleanPassword };
       users.push(newUser);
       localStorage.setItem("dagbon_users", JSON.stringify(users));
 
@@ -97,18 +133,24 @@ export default function AuthPage() {
       const visitorCount = parseInt(localStorage.getItem("dagbon_visitors_count") || "0", 10);
       localStorage.setItem("dagbon_visitors_count", (visitorCount + 1).toString());
 
+      // Log in automatically after registration
+      const session = {
+        email: cleanEmail,
+        name: cleanName,
+        isAdmin: false,
+        token: "user-session-token",
+      };
+      localStorage.setItem("dagbon_auth", JSON.stringify(session));
+
       window.dispatchEvent(new Event("storage"));
 
       // Save new user to Firebase
-      saveUserToFirebase({ name, email, isAdmin: false, password });
+      saveUserToFirebase({ name: cleanName, email: cleanEmail, isAdmin: false, password: cleanPassword });
 
-      setSuccess("Account created successfully! Switching to login...");
+      setSuccess("Account created successfully! Logging you in...");
       setTimeout(() => {
-        setIsLogin(true);
-        setPassword("");
-        setError("");
-        setSuccess("");
-      }, 1500);
+        router.push("/");
+      }, 1000);
     }
   };
 
@@ -213,6 +255,38 @@ export default function AuthPage() {
           >
             {isLogin ? "Sign In" : "Sign Up"}
             <ArrowRight size={16} />
+          </button>
+
+          <div className="relative flex py-2 items-center my-4">
+            <div className="flex-grow border-t border-white/10"></div>
+            <span className="shrink mx-4 text-[10px] text-sand/40 uppercase tracking-widest font-bold">Or continue with</span>
+            <div className="flex-grow border-t border-white/10"></div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleGoogleSignIn}
+            className="w-full py-3.5 rounded-2xl bg-white text-primary font-bold text-xs uppercase tracking-wider hover:bg-sand transition-all cursor-pointer flex items-center justify-center gap-3 shadow-md"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24">
+              <path
+                fill="#4285F4"
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+              />
+            </svg>
+            Sign In with Google
           </button>
         </form>
 

@@ -1,6 +1,7 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAnalytics, isSupported } from "firebase/analytics";
 import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "firebase/firestore";
+import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 
 // Firebase configuration provided by the user
 const firebaseConfig = {
@@ -15,11 +16,15 @@ const firebaseConfig = {
 
 let app: any;
 let db: any = null;
+let auth: any = null;
+let googleProvider: any = null;
 let analytics: any = null;
 
 try {
   app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
   db = getFirestore(app);
+  auth = getAuth(app);
+  googleProvider = new GoogleAuthProvider();
 
   // Initialize analytics only on the client side where it's supported
   if (typeof window !== "undefined") {
@@ -30,15 +35,33 @@ try {
     });
   }
 
-  console.log("Firebase & Firestore initialized successfully.");
+  console.log("Firebase, Firestore & Auth initialized successfully.");
 } catch (error) {
   console.error("Error initializing Firebase:", error);
 }
 
-export { db };
+export { db, auth, googleProvider };
 
 /**
- * Saves or updates a user profile in Firebase Firestore under 'users' collection.
+ * Trigger Google Popup Sign In and return user info
+ */
+export async function signInWithGoogleFirebase(): Promise<{ name: string; email: string; isAdmin: boolean }> {
+  if (typeof window === "undefined" || !auth || !googleProvider) {
+    throw new Error("Google Sign-In is unavailable on server side.");
+  }
+  const result = await signInWithPopup(auth, googleProvider);
+  const user = result.user;
+  const userData = {
+    name: user.displayName || user.email?.split("@")[0] || "Google User",
+    email: (user.email || "").toLowerCase(),
+    isAdmin: user.email?.toLowerCase() === "admin@dagbon.com",
+  };
+  await saveUserToFirebase(userData);
+  return userData;
+}
+
+/**
+ * Saves or updates a user profile in Firebase Firestore under 'users' collection and local storage.
  */
 export async function saveUserToFirebase(userData: {
   name: string;
@@ -46,15 +69,40 @@ export async function saveUserToFirebase(userData: {
   isAdmin: boolean;
   password?: string;
 }): Promise<void> {
-  if (!db) return;
+  const cleanEmail = userData.email.toLowerCase().trim();
+  const cleanName = userData.name.trim();
+
+  // 1. Save locally to dagbon_users
+  if (typeof window !== "undefined") {
+    try {
+      const raw = localStorage.getItem("dagbon_users");
+      const users: any[] = raw ? JSON.parse(raw) : [];
+      const idx = users.findIndex(u => u.email.toLowerCase() === cleanEmail);
+      if (idx >= 0) {
+        users[idx] = { ...users[idx], name: cleanName, email: cleanEmail, isAdmin: userData.isAdmin, ...(userData.password ? { password: userData.password } : {}) };
+      } else {
+        users.push({ name: cleanName, email: cleanEmail, isAdmin: userData.isAdmin, ...(userData.password ? { password: userData.password } : {}) });
+      }
+      localStorage.setItem("dagbon_users", JSON.stringify(users));
+      window.dispatchEvent(new Event("storage"));
+    } catch (e) {
+      console.error("Failed to save user to local storage", e);
+    }
+  }
+
+  // 2. Save to Firestore
+  if (!db) {
+    console.warn("Firestore database not initialized.");
+    return;
+  }
   try {
-    const docId = userData.email.toLowerCase().replace(/[^a-z0-9]/g, "_");
+    const docId = cleanEmail.replace(/[^a-z0-9]/g, "_");
     const userRef = doc(db, "users", docId);
     await setDoc(
       userRef,
       {
-        name: userData.name,
-        email: userData.email.toLowerCase(),
+        name: cleanName,
+        email: cleanEmail,
         isAdmin: userData.isAdmin,
         role: userData.isAdmin ? "Super Admin" : "Registered User",
         lastActive: new Date().toISOString(),
@@ -62,7 +110,7 @@ export async function saveUserToFirebase(userData: {
       },
       { merge: true }
     );
-    console.log(`User ${userData.email} successfully saved to Firebase.`);
+    console.log(`User ${cleanEmail} successfully saved to Firebase Firestore.`);
   } catch (error) {
     console.error("Firebase save user error:", error);
   }
