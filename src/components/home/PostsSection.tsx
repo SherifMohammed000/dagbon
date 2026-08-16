@@ -154,8 +154,13 @@ export default function PostsSection() {
 
   useEffect(() => {
     const handler = () => setPosts(loadPosts());
+    handler(); // Immediately load on client mount
     window.addEventListener("storage", handler);
-    return () => window.removeEventListener("storage", handler);
+    window.addEventListener("focus", handler);
+    return () => {
+      window.removeEventListener("storage", handler);
+      window.removeEventListener("focus", handler);
+    };
   }, []);
 
   if (posts.filter((p) => p.status !== "Draft").length === 0) return null;

@@ -116,7 +116,15 @@ export default function MusicExperience() {
           </motion.div>
         </div>
 
-        {tracks.length === 0 ? null : (
+        {tracks.length === 0 ? (
+          <div className="max-w-md mx-auto p-8 rounded-3xl bg-white/5 border border-white/10 text-center backdrop-blur-md">
+            <MusicIcon className="w-12 h-12 text-accent mx-auto mb-4 opacity-60 animate-pulse" />
+            <h3 className="text-lg font-bold text-white mb-2">No Tracks Published Yet</h3>
+            <p className="text-xs text-sand/60 leading-relaxed">
+              The admin has not uploaded any tracks yet. Check back soon for traditional music!
+            </p>
+          </div>
+        ) : (
           <div className="grid lg:grid-cols-3 gap-12 items-center">
             {/* Track List */}
             <div className="lg:col-span-1 space-y-4">

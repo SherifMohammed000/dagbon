@@ -105,7 +105,9 @@ export default function MusicManagement() {
         url: fileUrl // real uploaded URL
       };
 
-      const updated = [newTrack, ...musicItems];
+      const currentSaved = localStorage.getItem("dagbon_music");
+      const currentList: any[] = currentSaved ? JSON.parse(currentSaved) : musicItems;
+      const updated = [newTrack, ...currentList];
       try {
         localStorage.setItem("dagbon_music", JSON.stringify(updated));
         window.dispatchEvent(new Event("storage"));

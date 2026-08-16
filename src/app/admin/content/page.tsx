@@ -46,6 +46,7 @@ export default function ContentManagement() {
     setContentItems(prev => {
       const updated = prev.filter(item => item.id !== id);
       localStorage.setItem("dagbon_content", JSON.stringify(updated));
+      window.dispatchEvent(new Event("storage"));
       return updated;
     });
   };
@@ -90,46 +91,47 @@ export default function ContentManagement() {
         }
       }
       
+      const currentSaved = localStorage.getItem("dagbon_content");
+      const currentItems: any[] = currentSaved ? JSON.parse(currentSaved) : contentItems;
+
+      let updated: any[];
+      if (editingId) {
+        updated = currentItems.map((item: any) => {
+          if (item.id === editingId) {
+            return {
+              ...item,
+              title: newTitle,
+              category: newCategory,
+              body: newBody,
+              status,
+              ...(fileUrl ? { fileUrl } : {})
+            };
+          }
+          return item;
+        });
+      } else {
+        const newItem = { 
+          id: Date.now(), 
+          title: newTitle, 
+          category: newCategory, 
+          status, 
+          author: "Admin", 
+          date: new Date().toISOString().split('T')[0],
+          fileUrl,
+          body: newBody
+        };
+        updated = [newItem, ...currentItems];
+      }
+
       let storageFailed = false;
-      setContentItems(prev => {
-        let updated;
-        if (editingId) {
-          updated = prev.map(item => {
-            if (item.id === editingId) {
-              return {
-                ...item,
-                title: newTitle,
-                category: newCategory,
-                body: newBody,
-                status,
-                ...(fileUrl ? { fileUrl } : {})
-              };
-            }
-            return item;
-          });
-        } else {
-          const newItem = { 
-            id: Date.now(), 
-            title: newTitle, 
-            category: newCategory, 
-            status, 
-            author: "Admin", 
-            date: new Date().toISOString().split('T')[0],
-            fileUrl,
-            body: newBody
-          };
-          updated = [newItem, ...prev];
-        }
-        
-        try {
-          localStorage.setItem("dagbon_content", JSON.stringify(updated));
-          return updated;
-        } catch (err) {
-          console.error(err);
-          storageFailed = true;
-          return prev;
-        }
-      });
+      try {
+        localStorage.setItem("dagbon_content", JSON.stringify(updated));
+        window.dispatchEvent(new Event("storage"));
+        setContentItems(updated);
+      } catch (err) {
+        console.error(err);
+        storageFailed = true;
+      }
       
       if (storageFailed) {
         alert("Failed to save post metadata. Local storage quota exceeded.");
