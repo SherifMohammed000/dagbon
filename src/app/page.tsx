@@ -17,7 +17,14 @@ export default function Home() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const current = parseInt(localStorage.getItem("dagbon_visitors_count") || "0", 10);
-      localStorage.setItem("dagbon_visitors_count", (current + 1).toString());
+      if (!sessionStorage.getItem("dagbon_visited")) {
+        sessionStorage.setItem("dagbon_visited", "true");
+        localStorage.setItem("dagbon_visitors_count", (current + 1).toString());
+        window.dispatchEvent(new Event("storage"));
+      } else if (current === 0) {
+        localStorage.setItem("dagbon_visitors_count", "1");
+        window.dispatchEvent(new Event("storage"));
+      }
     }
   }, []);
 

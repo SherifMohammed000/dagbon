@@ -5,6 +5,7 @@ export type AdminNotification = {
   timestamp: number;
   timeStr: string;
   targetUrl: string;
+  read?: boolean;
 };
 
 export function getTargetUrl(text: string, type: "suggestion" | "comment" | "action"): string {
@@ -15,6 +16,34 @@ export function getTargetUrl(text: string, type: "suggestion" | "comment" | "act
   if (lower.includes("media") || lower.includes("image") || lower.includes("video") || lower.includes("gallery")) return "/admin/gallery";
   if (lower.includes("festival")) return "/admin/festivals";
   return "/admin/content";
+}
+
+function getReadIds(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = localStorage.getItem("dagbon_read_notifs");
+    const arr: string[] = raw ? JSON.parse(raw) : [];
+    return new Set(arr);
+  } catch {
+    return new Set();
+  }
+}
+
+export function markAllNotificationsAsRead(ids?: string[]) {
+  if (typeof window === "undefined") return;
+  try {
+    const current = getReadIds();
+    if (ids && ids.length > 0) {
+      ids.forEach((id) => current.add(id));
+    } else {
+      const all = getNotifications();
+      all.forEach((n) => current.add(n.id));
+    }
+    localStorage.setItem("dagbon_read_notifs", JSON.stringify(Array.from(current)));
+    window.dispatchEvent(new Event("storage"));
+  } catch (e) {
+    console.error("Failed to mark notifications as read", e);
+  }
 }
 
 export function addNotification(text: string, type: "suggestion" | "comment" | "action") {
@@ -44,6 +73,7 @@ export function getNotifications(): AdminNotification[] {
   try {
     const rawNotifs = localStorage.getItem("dagbon_notifications");
     const notifs: AdminNotification[] = rawNotifs ? JSON.parse(rawNotifs) : [];
+    const readIds = getReadIds();
 
     // Also collect suggestions from localStorage
     const rawSuggs = localStorage.getItem("dagbon_suggestions");
@@ -68,10 +98,10 @@ export function getNotifications(): AdminNotification[] {
     for (const item of all) {
       if (!seen.has(item.id)) {
         seen.add(item.id);
-        // Ensure item has targetUrl even if from legacy stored items
         if (!item.targetUrl) {
           item.targetUrl = getTargetUrl(item.text, item.type);
         }
+        item.read = readIds.has(item.id);
         unique.push(item);
       }
     }

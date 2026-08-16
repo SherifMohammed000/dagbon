@@ -31,60 +31,66 @@ export default function AdminDashboard() {
   const [upcomingFestivals, setUpcomingFestivals] = useState<any[]>([]);
 
   useEffect(() => {
-    try {
-      // 0. Visitor count
-      const rawVisitors = localStorage.getItem("dagbon_visitors_count");
-      if (rawVisitors) setVisitorCount(parseInt(rawVisitors, 10));
+    const loadStats = () => {
+      try {
+        // 0. Visitor count
+        const rawVisitors = localStorage.getItem("dagbon_visitors_count");
+        if (rawVisitors) setVisitorCount(parseInt(rawVisitors, 10));
 
-      // 1. Content
-      const savedContent = localStorage.getItem("dagbon_content");
-      const content = savedContent ? JSON.parse(savedContent) : [];
-      
-      // 2. Music
-      const savedMusic = localStorage.getItem("dagbon_music");
-      const music = savedMusic ? JSON.parse(savedMusic) : [];
+        // 1. Content
+        const savedContent = localStorage.getItem("dagbon_content");
+        const content = savedContent ? JSON.parse(savedContent) : [];
+        
+        // 2. Music
+        const savedMusic = localStorage.getItem("dagbon_music");
+        const music = savedMusic ? JSON.parse(savedMusic) : [];
 
-      // 3. Gallery
-      const savedGallery = localStorage.getItem("dagbon_gallery");
-      const gallery = savedGallery ? JSON.parse(savedGallery) : [];
+        // 3. Gallery
+        const savedGallery = localStorage.getItem("dagbon_gallery");
+        const gallery = savedGallery ? JSON.parse(savedGallery) : [];
 
-      // 4. Festivals
-      const savedFestivals = localStorage.getItem("dagbon_festivals");
-      const festivals = savedFestivals ? JSON.parse(savedFestivals) : [];
+        // 4. Festivals
+        const savedFestivals = localStorage.getItem("dagbon_festivals");
+        const festivals = savedFestivals ? JSON.parse(savedFestivals) : [];
 
-      // 5. Users (registered users + admin)
-      const savedUsers = localStorage.getItem("dagbon_users");
-      const users = savedUsers ? JSON.parse(savedUsers) : [];
+        // 5. Users (registered users + admin)
+        const savedUsers = localStorage.getItem("dagbon_users");
+        const users = savedUsers ? JSON.parse(savedUsers) : [];
 
-      setCounts({
-        content: content.length,
-        music: music.length,
-        gallery: gallery.length,
-        festivals: festivals.length,
-        users: Math.max(users.length, 1) // At least 1 (Admin)
-      });
+        setCounts({
+          content: content.length,
+          music: music.length,
+          gallery: gallery.length,
+          festivals: festivals.length,
+          users: users.length + 1 // All registered users + 1 (Super Admin)
+        });
 
-      // Sync user count from Firebase Firestore
-      fetchUsersFromFirebase().then(fbUsers => {
-        if (fbUsers.length > 0) {
-          setCounts(prev => ({ ...prev, users: Math.max(prev.users, fbUsers.length) }));
-        }
-      }).catch(console.error);
+        // Sync user count from Firebase Firestore
+        fetchUsersFromFirebase().then(fbUsers => {
+          if (fbUsers.length > 0) {
+            setCounts(prev => ({ ...prev, users: Math.max(prev.users, fbUsers.length) }));
+          }
+        }).catch(console.error);
 
-      setRecentContent(content.slice(0, 3));
+        setRecentContent(content.slice(0, 3));
 
-      // Filter upcoming festivals: date is in the future or today, sorted ascending by date
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const upcoming = festivals
-        .filter((f: any) => new Date(f.date) >= today)
-        .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
-        .slice(0, 2);
+        // Filter upcoming festivals: date is in the future or today, sorted ascending by date
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const upcoming = festivals
+          .filter((f: any) => new Date(f.date) >= today)
+          .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
+          .slice(0, 2);
 
-      setUpcomingFestivals(upcoming);
-    } catch (e) {
-      console.error("Failed to load dashboard statistics", e);
-    }
+        setUpcomingFestivals(upcoming);
+      } catch (e) {
+        console.error("Failed to load dashboard statistics", e);
+      }
+    };
+
+    loadStats();
+    window.addEventListener("storage", loadStats);
+    return () => window.removeEventListener("storage", loadStats);
   }, []);
 
   const getDaysRemainingString = (dateStr: string) => {

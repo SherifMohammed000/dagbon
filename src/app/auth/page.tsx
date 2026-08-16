@@ -92,6 +92,13 @@ export default function AuthPage() {
       const newUser = { name, email, password };
       users.push(newUser);
       localStorage.setItem("dagbon_users", JSON.stringify(users));
+
+      // Ensure visitor count is updated when user registers
+      const visitorCount = parseInt(localStorage.getItem("dagbon_visitors_count") || "0", 10);
+      localStorage.setItem("dagbon_visitors_count", (visitorCount + 1).toString());
+
+      window.dispatchEvent(new Event("storage"));
+
       // Save new user to Firebase
       saveUserToFirebase({ name, email, isAdmin: false, password });
 

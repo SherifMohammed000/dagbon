@@ -284,10 +284,7 @@ export default function AdminGallery() {
               </div>
 
               {/* Action Overlay */}
-              <div className="absolute inset-0 bg-primary/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                <button onClick={() => alert('Editing: ' + item.title)} className="w-10 h-10 rounded-full bg-white text-primary flex items-center justify-center hover:bg-accent hover:text-white transition-colors shadow-lg cursor-pointer">
-                  <Edit size={18} />
-                </button>
+              <div className="absolute inset-0 bg-primary/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <button onClick={() => handleDeleteMedia(item.id, item.title)} className="w-10 h-10 rounded-full bg-white text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors shadow-lg cursor-pointer" title="Delete Media">
                   <Trash2 size={18} />
                 </button>
@@ -296,11 +293,8 @@ export default function AdminGallery() {
 
             {/* Info */}
             <div className="p-4">
-              <div className="flex justify-between items-start mb-1">
-                <h3 className="font-bold text-primary text-sm truncate pr-2">{item.title}</h3>
-                <button className="text-earth/30 hover:text-primary cursor-pointer">
-                  <MoreVertical size={16} />
-                </button>
+              <div className="mb-1">
+                <h3 className="font-bold text-primary text-sm truncate">{item.title}</h3>
               </div>
               <div className="flex justify-between items-center text-xs text-earth/50">
                 <span>{item.date}</span>

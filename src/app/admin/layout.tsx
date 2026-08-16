@@ -17,7 +17,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { getNotifications, getTimeAgo, AdminNotification } from "@/lib/notifications";
+import { getNotifications, getTimeAgo, markAllNotificationsAsRead, AdminNotification } from "@/lib/notifications";
 
 const menuItems = [
   { name: "Overview", icon: <LayoutDashboard size={20} />, href: "/admin" },
@@ -59,6 +59,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     window.addEventListener("storage", syncNotifs);
     return () => window.removeEventListener("storage", syncNotifs);
   }, []);
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const toggleNotifications = () => {
+    if (!showNotifications && unreadCount > 0) {
+      markAllNotificationsAsRead();
+    }
+    setShowNotifications(!showNotifications);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("dagbon_auth");
@@ -138,14 +147,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
           <div className="flex items-center gap-6 relative">
             <button 
-              onClick={() => setShowNotifications(!showNotifications)} 
+              onClick={toggleNotifications} 
               className="relative p-2 text-earth/60 hover:text-primary transition-colors cursor-pointer rounded-full hover:bg-sand/30"
               title="Notifications"
             >
               <Bell size={20} />
-              {notifications.length > 0 && (
+              {unreadCount > 0 && (
                 <span className="absolute top-1 right-1 w-4 h-4 bg-secondary text-white text-[9px] font-bold flex items-center justify-center rounded-full border-2 border-white shadow-xs">
-                  {notifications.length > 9 ? "9+" : notifications.length}
+                  {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               )}
             </button>
@@ -168,7 +177,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 >
                   <div className="p-4 border-b border-secondary/10 flex items-center justify-between bg-sand/10">
                     <h4 className="font-bold text-primary text-sm">Notifications</h4>
-                    <span className="text-[10px] font-bold text-secondary uppercase tracking-wider">{notifications.length} recent</span>
+                    <span className="text-[10px] font-bold text-secondary uppercase tracking-wider">{unreadCount} unread</span>
                   </div>
                   <div className="max-h-80 overflow-y-auto divide-y divide-secondary/5 custom-scrollbar">
                     {notifications.length === 0 ? (
@@ -180,10 +189,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         <button
                           key={n.id}
                           onClick={() => {
+                            markAllNotificationsAsRead([n.id]);
                             setShowNotifications(false);
                             router.push(n.targetUrl || "/admin");
                           }}
-                          className="w-full text-left p-4 hover:bg-sand/20 transition-all cursor-pointer group block"
+                          className={`w-full text-left p-4 transition-all cursor-pointer group block ${
+                            n.read ? "bg-white opacity-60" : "bg-secondary/5 hover:bg-sand/20"
+                          }`}
                         >
                           <p className="text-xs text-primary leading-relaxed font-medium mb-1 group-hover:text-secondary transition-colors">{n.text}</p>
                           <div className="flex items-center justify-between">
