@@ -16,27 +16,119 @@ import {
   Music,
   Loader2
 } from "lucide-react";
-import { uploadFileToFirebase } from "@/lib/firebase";
+import { uploadFileToFirebase, getFileURL } from "@/lib/firebase";
+
+const siteDefaultMedia = [
+  {
+    id: "site_img_1",
+    type: "image",
+    url: "/savannah-overlook.jpg",
+    title: "Savannah Overlook Landscape",
+    size: "1.8 MB",
+    date: "Site Asset",
+  },
+  {
+    id: "site_img_2",
+    type: "image",
+    url: "/savannah-aerial.jpg",
+    title: "Dagbon Heartland Aerial",
+    size: "2.4 MB",
+    date: "Site Asset",
+  },
+  {
+    id: "site_img_3",
+    type: "image",
+    url: "/mud-hut.jpg",
+    title: "Traditional Dagomba Compound",
+    size: "1.2 MB",
+    date: "Site Asset",
+  },
+  {
+    id: "site_img_4",
+    type: "image",
+    url: "/drummer.jpg",
+    title: "Dagbon Talking Drums & Musician",
+    size: "1.5 MB",
+    date: "Site Asset",
+  },
+];
+
+function MediaThumbnail({ item }: { item: any }) {
+  const [resolvedUrl, setResolvedUrl] = useState<string>(item.url);
+
+  useEffect(() => {
+    if (item.url) {
+      getFileURL(item.url).then((u) => setResolvedUrl(u || item.url)).catch(() => setResolvedUrl(item.url));
+    }
+  }, [item.url]);
+
+  if (item.type === "image") {
+    return (
+      <Image 
+        src={resolvedUrl} 
+        alt={item.title} 
+        fill 
+        className="object-cover group-hover:scale-110 transition-transform duration-700" 
+      />
+    );
+  }
+
+  if (item.type === "video") {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center text-earth/30 bg-primary/20">
+        <Video size={48} className="text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center text-accent/50 bg-primary/20">
+      <Music size={48} className="text-accent animate-pulse" />
+    </div>
+  );
+}
 
 export default function AdminGallery() {
   const [mediaItems, setMediaItems] = useState<any[]>([]);
 
   useEffect(() => {
     const saved = localStorage.getItem("dagbon_gallery");
+    let userItems: any[] = [];
     if (saved) {
       try {
-        setMediaItems(JSON.parse(saved));
+        userItems = JSON.parse(saved);
       } catch (e) {
         console.error("Failed to parse gallery items", e);
       }
     }
+    // Combine site default images with user uploaded media (deduplicate by id)
+    const combined = [...userItems];
+    for (const def of siteDefaultMedia) {
+      if (!combined.some(m => m.id === def.id || m.title === def.title)) {
+        combined.push(def);
+      }
+    }
+    setMediaItems(combined);
   }, []);
+
   const [filter, setFilter] = useState("all");
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
 
   const handleUploadClick = () => {
     setIsUploading(!isUploading);
+  };
+
+  const handleDeleteMedia = (id: any, title: string) => {
+    const confirmed = window.confirm(`Are you sure you want to delete "${title}" from the media gallery?`);
+    if (!confirmed) return;
+
+    setMediaItems(prev => {
+      const updated = prev.filter(m => m.id !== id);
+      const userOnly = updated.filter(m => !m.id.toString().startsWith("site_img_"));
+      localStorage.setItem("dagbon_gallery", JSON.stringify(userOnly));
+      return updated;
+    });
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,7 +158,8 @@ export default function AdminGallery() {
       
       setMediaItems(prev => {
         const updated = [newItem, ...prev];
-        localStorage.setItem("dagbon_gallery", JSON.stringify(updated));
+        const userOnly = updated.filter(m => !m.id.toString().startsWith("site_img_"));
+        localStorage.setItem("dagbon_gallery", JSON.stringify(userOnly));
         return updated;
       });
       setIsUploading(false);
@@ -182,22 +275,7 @@ export default function AdminGallery() {
           >
             {/* Thumbnail */}
             <div className="relative aspect-square bg-sand/20 overflow-hidden">
-              {item.type === "image" ? (
-                <Image 
-                  src={item.url} 
-                  alt={item.title} 
-                  fill 
-                  className="object-cover group-hover:scale-110 transition-transform duration-700" 
-                />
-              ) : item.type === "video" ? (
-                <div className="absolute inset-0 flex items-center justify-center text-earth/30 bg-primary/20">
-                  <Video size={48} className="text-primary" />
-                </div>
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center text-accent/50 bg-primary/20">
-                  <Music size={48} className="text-accent animate-pulse" />
-                </div>
-              )}
+              <MediaThumbnail item={item} />
               
               {/* Type Badge */}
               <div className="absolute top-3 left-3 px-2 py-1 bg-black/50 backdrop-blur-md rounded text-white text-[10px] font-bold uppercase tracking-widest flex items-center gap-1">
@@ -210,13 +288,7 @@ export default function AdminGallery() {
                 <button onClick={() => alert('Editing: ' + item.title)} className="w-10 h-10 rounded-full bg-white text-primary flex items-center justify-center hover:bg-accent hover:text-white transition-colors shadow-lg cursor-pointer">
                   <Edit size={18} />
                 </button>
-                <button onClick={() => {
-                  setMediaItems(prev => {
-                    const updated = prev.filter(m => m.id !== item.id);
-                    localStorage.setItem("dagbon_gallery", JSON.stringify(updated));
-                    return updated;
-                  });
-                }} className="w-10 h-10 rounded-full bg-white text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors shadow-lg cursor-pointer">
+                <button onClick={() => handleDeleteMedia(item.id, item.title)} className="w-10 h-10 rounded-full bg-white text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors shadow-lg cursor-pointer" title="Delete Media">
                   <Trash2 size={18} />
                 </button>
               </div>
