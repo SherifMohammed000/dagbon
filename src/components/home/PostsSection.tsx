@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FileText, ChevronDown, ChevronUp, Calendar, MessageCircle, Paperclip } from "lucide-react";
 import CommentBox from "@/components/comments/CommentBox";
+import { getFileURL } from "@/lib/firebase";
 
 type Post = {
   id: number;
@@ -252,14 +253,15 @@ export default function PostsSection() {
                           </p>
                         )}
                         {post.fileUrl && (
-                          <a
-                            href={post.fileUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 text-xs font-bold text-secondary hover:text-primary transition-colors mb-4"
+                          <button
+                            onClick={async () => {
+                              const resolved = await getFileURL(post.fileUrl!);
+                              if (resolved) window.open(resolved, "_blank");
+                            }}
+                            className="inline-flex items-center gap-2 text-xs font-bold text-secondary hover:text-primary transition-colors mb-4 cursor-pointer"
                           >
                             <Paperclip size={13} /> View Attachment
-                          </a>
+                          </button>
                         )}
                         <CommentBox postId={post.id} />
                       </div>

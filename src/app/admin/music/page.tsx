@@ -15,7 +15,7 @@ import {
   Pause
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-import { uploadFileToFirebase } from "@/lib/firebase";
+import { uploadFileToFirebase, getFileURL } from "@/lib/firebase";
 
 const getAudioDuration = (file: File): Promise<string> => {
   return new Promise((resolve) => {
@@ -125,7 +125,7 @@ export default function MusicManagement() {
     }
   };
 
-  const handlePlayPreview = (track: any) => {
+  const handlePlayPreview = async (track: any) => {
     if (!track.url) {
       alert("No audio file available for preview.");
       return;
@@ -136,7 +136,8 @@ export default function MusicManagement() {
       setPlayingTrackId(null);
     } else {
       if (audioRef.current) {
-        audioRef.current.src = track.url;
+        const resolvedUrl = await getFileURL(track.url);
+        audioRef.current.src = resolvedUrl;
         audioRef.current.play().catch(err => console.error("Playback error:", err));
         setPlayingTrackId(track.id);
       }

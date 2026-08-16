@@ -14,7 +14,7 @@ import {
   Loader2
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { uploadFileToFirebase } from "@/lib/firebase";
+import { uploadFileToFirebase, getFileURL } from "@/lib/firebase";
 
 export default function ContentManagement() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -57,61 +57,76 @@ export default function ContentManagement() {
   };
 
   const handleSave = async () => {
-    if (!newTitle.trim()) return;
-    
-    setUploading(true);
-    let fileUrl = "";
-    if (selectedFile) {
-      try {
-        fileUrl = await uploadFileToFirebase(
-          selectedFile, 
-          `content/${Date.now()}_${selectedFile.name}`
-        );
-      } catch (err) {
-        console.error(err);
-      }
+    if (!newTitle.trim()) {
+      alert("Please enter a post title.");
+      return;
     }
     
-    setContentItems(prev => {
-      let updated;
-      if (editingId) {
-        updated = prev.map(item => {
-          if (item.id === editingId) {
-            return {
-              ...item,
-              title: newTitle,
-              category: newCategory,
-              body: newBody,
-              ...(fileUrl ? { fileUrl } : {})
-            };
-          }
-          return item;
-        });
-      } else {
-        const newItem = { 
-          id: Date.now(), 
-          title: newTitle, 
-          category: newCategory, 
-          status: "Published", 
-          author: "Admin", 
-          date: new Date().toISOString().split('T')[0],
-          fileUrl,
-          body: newBody
-        };
-        updated = [newItem, ...prev];
+    setUploading(true);
+    try {
+      let fileUrl = "";
+      if (selectedFile) {
+        try {
+          fileUrl = await uploadFileToFirebase(
+            selectedFile, 
+            `content/${Date.now()}_${selectedFile.name}`
+          );
+        } catch (err) {
+          console.error("File upload failed:", err);
+        }
       }
       
-      try {
-        localStorage.setItem("dagbon_content", JSON.stringify(updated));
-        return updated;
-      } catch (err) {
-        console.error(err);
-        alert("Failed to save post. Local storage quota exceeded.");
-        return prev;
+      let storageFailed = false;
+      setContentItems(prev => {
+        let updated;
+        if (editingId) {
+          updated = prev.map(item => {
+            if (item.id === editingId) {
+              return {
+                ...item,
+                title: newTitle,
+                category: newCategory,
+                body: newBody,
+                ...(fileUrl ? { fileUrl } : {})
+              };
+            }
+            return item;
+          });
+        } else {
+          const newItem = { 
+            id: Date.now(), 
+            title: newTitle, 
+            category: newCategory, 
+            status: "Published", 
+            author: "Admin", 
+            date: new Date().toISOString().split('T')[0],
+            fileUrl,
+            body: newBody
+          };
+          updated = [newItem, ...prev];
+        }
+        
+        try {
+          localStorage.setItem("dagbon_content", JSON.stringify(updated));
+          return updated;
+        } catch (err) {
+          console.error(err);
+          storageFailed = true;
+          return prev;
+        }
+      });
+      
+      if (storageFailed) {
+        alert("Failed to save post metadata. Local storage quota exceeded.");
+      } else {
+        resetForm();
       }
-    });
-    
-    resetForm();
+    } catch (err) {
+      console.error(err);
+      alert("An error occurred while saving the post.");
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -256,14 +271,15 @@ export default function ContentManagement() {
                     <div>
                       <span className="font-bold text-primary text-sm block">{item.title}</span>
                       {(item as any).fileUrl && (
-                        <a 
-                          href={(item as any).fileUrl} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="inline-flex items-center gap-1.5 text-xs text-secondary hover:text-primary transition-colors font-bold mt-1"
+                        <button 
+                          onClick={async () => {
+                            const resolved = await getFileURL((item as any).fileUrl);
+                            if (resolved) window.open(resolved, "_blank");
+                          }}
+                          className="inline-flex items-center gap-1.5 text-xs text-secondary hover:text-primary transition-colors font-bold mt-1 cursor-pointer"
                         >
                           <Paperclip size={12} /> View Attachment
-                        </a>
+                        </button>
                       )}
                     </div>
                   </div>

@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Play, SkipForward, SkipBack, Volume2, Music as MusicIcon, Disc, Pause } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import { getFileURL } from "@/lib/firebase";
 
 type Track = { title: string; artist: string; category: string; duration: string; url: string };
 
@@ -37,15 +38,28 @@ export default function MusicExperience() {
     }
   }, [tracks, currentTrack]);
 
+  const [audioUrl, setAudioUrl] = useState<string>("");
+
+  const active = tracks[currentTrack];
+
   useEffect(() => {
-    if (audioRef.current) {
+    if (active?.url) {
+      getFileURL(active.url).then(setAudioUrl).catch(console.error);
+    } else {
+      setAudioUrl("");
+    }
+  }, [active?.url]);
+
+  useEffect(() => {
+    if (audioRef.current && audioUrl) {
+      audioRef.current.src = audioUrl;
       if (isPlaying) {
         audioRef.current.play().catch(e => console.log("Audio play blocked", e));
       } else {
         audioRef.current.pause();
       }
     }
-  }, [isPlaying, currentTrack]);
+  }, [isPlaying, audioUrl, currentTrack]);
 
   const togglePlay = () => setIsPlaying(!isPlaying);
 
@@ -61,15 +75,13 @@ export default function MusicExperience() {
     setIsPlaying(true);
   };
 
-  const active = tracks[currentTrack];
-
   return (
     <section id="music" className="py-24 relative overflow-hidden text-white">
       {/* Hidden Audio Element */}
       {active && (
         <audio
           ref={audioRef}
-          src={active.url}
+          src={audioUrl}
           onEnded={nextTrack}
         />
       )}

@@ -1,6 +1,5 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAnalytics, isSupported } from "firebase/analytics";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 // Firebase configuration provided by the user
 const firebaseConfig = {
@@ -13,79 +12,108 @@ const firebaseConfig = {
   measurementId: "G-04Y384QH86"
 };
 
-// Check if variables are configured
-const isConfigured = 
-  !!firebaseConfig.apiKey && 
-  !!firebaseConfig.storageBucket && 
-  !!firebaseConfig.projectId;
-
 let app: any;
-let storage: any = null;
 let analytics: any = null;
 
-if (isConfigured) {
-  try {
-    app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-    storage = getStorage(app);
-    
-    // Initialize analytics only on the client side where it's supported
-    if (typeof window !== "undefined") {
-      isSupported().then((supported) => {
-        if (supported) {
-          analytics = getAnalytics(app);
-        }
-      });
-    }
-    
-    console.log("Firebase initialized successfully.");
-  } catch (error) {
-    console.error("Error initializing Firebase:", error);
+try {
+  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+
+  // Initialize analytics only on the client side where it's supported
+  if (typeof window !== "undefined") {
+    isSupported().then((supported) => {
+      if (supported) {
+        analytics = getAnalytics(app);
+      }
+    });
   }
-} else {
-  console.warn("Firebase credentials missing. Falling back to local/mock storage.");
+
+  console.log("Firebase initialized successfully.");
+} catch (error) {
+  console.error("Error initializing Firebase:", error);
 }
 
-/**
- * Uploads a file to Firebase Storage if configured.
- * Otherwise, falls back to generating a local Object URL.
- * 
- * @param file The file to upload
- * @param path The destination path in the storage bucket
- * @returns Promise resolving to the download URL
- */
-/**
- * Converts a File to a base64 data URL (works across pages, tabs, and localStorage).
- */
-function fileToDataURL(file: File): Promise<string> {
+// ---------------------------------------------------------------------------
+// IndexedDB-based file storage (replaces Firebase Storage uploads)
+// ---------------------------------------------------------------------------
+const DB_NAME = "dagbon_files";
+const STORE_NAME = "uploads";
+const DB_VERSION = 1;
+
+function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME);
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
   });
 }
 
-export async function uploadFileToFirebase(file: File, path: string): Promise<string> {
-  if (isConfigured && storage) {
-    try {
-      const storageRef = ref(storage, path);
-
-      // Allow up to 60 seconds for audio uploads — they can be large
-      const uploadPromise = uploadBytes(storageRef, file);
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Firebase upload timed out')), 60000)
-      );
-
-      const snapshot = await Promise.race([uploadPromise, timeoutPromise]);
-      const downloadURL = await getDownloadURL(snapshot.ref);
-      return downloadURL;
-    } catch (error) {
-      console.error("Firebase upload failed, falling back to base64 data URL:", error);
-      // Base64 data URL is serializable — safe to store in localStorage and use across pages
-      return fileToDataURL(file);
-    }
-  } else {
-    // No Firebase: encode as base64 so the URL survives page navigation and localStorage
-    return fileToDataURL(file);
-  }
+async function saveBlob(key: string, blob: Blob): Promise<void> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    tx.objectStore(STORE_NAME).put(blob, key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
 }
+
+async function loadBlob(key: string): Promise<Blob | null> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readonly");
+    const req = tx.objectStore(STORE_NAME).get(key);
+    req.onsuccess = () => resolve(req.result ?? null);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+/**
+ * Uploads a file by storing it in IndexedDB.
+ * Returns a custom URI in the form  idb://<key>  that can be resolved later
+ * via getFileURL().
+ */
+export async function uploadFileToFirebase(file: File, path: string): Promise<string> {
+  const key = `${path}`;
+  await saveBlob(key, file);
+  return `idb://${key}`;
+}
+
+// Cache of created object URLs so we don't create duplicates
+const objectURLCache: Record<string, string> = {};
+
+/**
+ * Given a URL (which may be an idb:// URI, a blob:, an https://, or a data: URL),
+ * returns a usable browser URL.  For idb:// URIs it loads the blob from IndexedDB
+ * and creates an Object URL.
+ */
+export async function getFileURL(url: string): Promise<string> {
+  if (!url) return "";
+
+  // Already a normal URL
+  if (url.startsWith("http") || url.startsWith("data:") || url.startsWith("blob:")) {
+    return url;
+  }
+
+  // IndexedDB reference
+  if (url.startsWith("idb://")) {
+    if (objectURLCache[url]) return objectURLCache[url];
+
+    const key = url.slice(6); // strip "idb://"
+    const blob = await loadBlob(key);
+    if (blob) {
+      const objURL = URL.createObjectURL(blob);
+      objectURLCache[url] = objURL;
+      return objURL;
+    }
+    return "";
+  }
+
+  return url;
+}
+
