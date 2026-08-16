@@ -116,27 +116,27 @@ export default function AboutDagbon() {
               <div className="absolute inset-0 rounded-[40px] md:rounded-[64px] overflow-hidden">
                 <Image src="/mud-hut.jpg" alt="Traditional Dagomba Compound" fill className="object-cover opacity-20" />
               </div>
-              <div className="absolute inset-0 bg-primary/80 rounded-[40px] md:rounded-[64px]" />
-              <Landmark className="text-accent mb-10" size={64} />
-              <h3 className="text-4xl md:text-5xl font-serif mb-8 leading-tight">The Ancient <br /> Governance</h3>
-              <p className="text-sand/60 text-lg mb-10 leading-relaxed font-light">
+              <div className="absolute inset-0 bg-primary/50 rounded-[40px] md:rounded-[64px]" />
+              <Landmark className="text-accent mb-10 relative z-10" size={64} />
+              <h3 className="text-4xl md:text-5xl font-serif mb-8 leading-tight text-white relative z-10">The Ancient <br /> Governance</h3>
+              <p className="text-sand/90 text-lg mb-10 leading-relaxed font-light relative z-10">
                 The skin system is the foundation of Dagbon's hierarchy. From the Ya-Na in Yendi to 
                 divisional chiefs and village heads, the system ensures order and continuity.
               </p>
-              <ul className="space-y-6">
+              <ul className="space-y-6 relative z-10">
                 {[
                   "The Ya-Na (Overlord of Dagbon)",
                   "Divisional Chiefs (The Kpamba)",
                   "The Council of Elders"
                 ].map((item, i) => (
-                  <li key={i} className="flex items-center gap-6 text-sand/90 text-lg font-medium group cursor-default">
+                  <li key={i} className="flex items-center gap-6 text-white text-lg font-medium group cursor-default">
                     <div className="w-3 h-3 rounded-full bg-accent group-hover:scale-150 transition-transform shadow-[0_0_10px_rgba(212,175,55,0.8)]" />
                     {item}
                   </li>
                 ))}
               </ul>
               
-              <button onClick={() => setIsLineageOpen(true)} className="cursor-pointer mt-16 px-10 py-5 rounded-full bg-accent text-primary font-bold uppercase tracking-widest text-xs hover:bg-white transition-all shadow-2xl">
+              <button onClick={() => setIsLineageOpen(true)} className="cursor-pointer mt-16 px-10 py-5 rounded-full bg-accent text-primary font-bold uppercase tracking-widest text-xs hover:bg-white transition-all shadow-2xl relative z-10">
                 Explore The Lineage
               </button>
             </motion.div>

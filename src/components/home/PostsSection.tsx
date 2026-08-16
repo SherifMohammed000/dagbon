@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FileText, ChevronDown, ChevronUp, Calendar, Tag, MessageCircle, Paperclip } from "lucide-react";
+import { FileText, ChevronDown, ChevronUp, Calendar, MessageCircle, Paperclip } from "lucide-react";
 import CommentBox from "@/components/comments/CommentBox";
 
 type Post = {
@@ -37,6 +37,22 @@ function commentCount(postId: number): number {
   return 0;
 }
 
+type Reactions = Record<string, string[]>; // { "❤️": ["user1@x.com", ...], ... }
+
+function loadReactions(postId: number): Reactions {
+  if (typeof window !== "undefined") {
+    const raw = localStorage.getItem(`dagbon_reactions_${postId}`);
+    if (raw) { try { return JSON.parse(raw); } catch {} }
+  }
+  return {};
+}
+
+function saveReactions(postId: number, reactions: Reactions) {
+  localStorage.setItem(`dagbon_reactions_${postId}`, JSON.stringify(reactions));
+}
+
+const REACTION_EMOJIS = ["❤️", "👏", "🔥", "👍", "💯"];
+
 const categoryColors: Record<string, string> = {
   History: "bg-amber-100 text-amber-700",
   Royalty: "bg-purple-100 text-purple-700",
@@ -44,6 +60,92 @@ const categoryColors: Record<string, string> = {
   Fashion: "bg-pink-100 text-pink-700",
   Food: "bg-orange-100 text-orange-700",
 };
+
+function PostReactions({ postId }: { postId: number }) {
+  const [reactions, setReactions] = useState<Reactions>(() => loadReactions(postId));
+  const [showPicker, setShowPicker] = useState(false);
+
+  // Create a simple anonymous user id per browser session
+  const getUserId = () => {
+    if (typeof window === "undefined") return "anon";
+    let id = localStorage.getItem("dagbon_anon_id");
+    if (!id) {
+      id = "anon_" + Math.random().toString(36).slice(2, 10);
+      localStorage.setItem("dagbon_anon_id", id);
+    }
+    return id;
+  };
+
+  const toggleReaction = (emoji: string) => {
+    const userId = getUserId();
+    const current = reactions[emoji] || [];
+    let updated: Reactions;
+    if (current.includes(userId)) {
+      updated = { ...reactions, [emoji]: current.filter(u => u !== userId) };
+    } else {
+      updated = { ...reactions, [emoji]: [...current, userId] };
+    }
+    // Remove emoji key if empty
+    if (updated[emoji]?.length === 0) delete updated[emoji];
+    setReactions(updated);
+    saveReactions(postId, updated);
+  };
+
+  const userId = typeof window !== "undefined" ? getUserId() : "anon";
+
+  const activeReactions = Object.entries(reactions).filter(([, users]) => users.length > 0);
+
+  return (
+    <div className="flex items-center gap-2 flex-wrap mt-4">
+      {/* Existing reactions */}
+      {activeReactions.map(([emoji, users]) => (
+        <button
+          key={emoji}
+          onClick={() => toggleReaction(emoji)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition-all cursor-pointer ${
+            users.includes(userId)
+              ? "bg-secondary/10 border-secondary/30 shadow-sm"
+              : "bg-sand/20 border-secondary/5 hover:bg-sand/40"
+          }`}
+        >
+          <span className="text-base">{emoji}</span>
+          <span className="text-[11px] font-bold text-earth/60">{users.length}</span>
+        </button>
+      ))}
+
+      {/* Add reaction button */}
+      <div className="relative">
+        <button
+          onClick={() => setShowPicker(!showPicker)}
+          className="w-8 h-8 rounded-full bg-sand/20 border border-secondary/5 hover:bg-sand/40 flex items-center justify-center text-earth/40 hover:text-earth/70 transition-all cursor-pointer text-sm"
+          title="Add reaction"
+        >
+          +
+        </button>
+        <AnimatePresence>
+          {showPicker && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 4 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 4 }}
+              className="absolute bottom-full left-0 mb-2 flex items-center gap-1 bg-white rounded-2xl shadow-xl border border-secondary/10 p-2 z-20"
+            >
+              {REACTION_EMOJIS.map(emoji => (
+                <button
+                  key={emoji}
+                  onClick={() => { toggleReaction(emoji); setShowPicker(false); }}
+                  className="w-9 h-9 rounded-xl hover:bg-sand/40 flex items-center justify-center text-lg transition-all hover:scale-125 cursor-pointer"
+                >
+                  {emoji}
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
 
 export default function PostsSection() {
   const [posts, setPosts] = useState<Post[]>(loadPosts);
@@ -116,6 +218,10 @@ export default function PostsSection() {
                       {post.body}
                     </p>
                   )}
+
+                  {/* Reactions */}
+                  <PostReactions postId={post.id} />
+
 
                   <button
                     onClick={() => setExpandedId(isExpanded ? null : post.id)}

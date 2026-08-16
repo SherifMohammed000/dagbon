@@ -96,16 +96,7 @@ export default function MusicExperience() {
           </motion.div>
         </div>
 
-        {tracks.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-20 text-sand/40"
-          >
-            <MusicIcon size={48} className="mx-auto mb-4 opacity-40" />
-            <p className="text-lg">No tracks added yet. Upload music from the admin panel.</p>
-          </motion.div>
-        ) : (
+        {tracks.length === 0 ? null : (
           <div className="grid lg:grid-cols-3 gap-12 items-center">
             {/* Track List */}
             <div className="lg:col-span-1 space-y-4">

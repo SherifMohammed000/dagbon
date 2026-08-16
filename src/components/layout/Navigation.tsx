@@ -12,7 +12,7 @@ const navLinks = [
   { name: "History", href: "#history" },
   { name: "Music", href: "#music" },
   { name: "Festivals", href: "#festivals" },
-  { name: "Fashion", href: "#fashion" },
+
   { name: "Proverbs", href: "#proverbs" },
   { name: "Culinary", href: "#food" },
   { name: "Royalty", href: "#heritage" },
@@ -26,7 +26,7 @@ const searchIndex = [
   { title: "Damba Festival Celebrations", type: "Festivals", targetId: "festivals" },
   { title: "Bugum (Fire) Festival Search", type: "Festivals", targetId: "festivals" },
   { title: "Language Proverbs & Wisdom", type: "Proverbs", targetId: "proverbs" },
-  { title: "Traditional Smocks & Smock Weavers", type: "Fashion", targetId: "fashion" },
+
   { title: "Tuo Zaafi (TZ) & Ayoyo Soup", type: "Food", targetId: "food" },
   { title: "Dawadawa Seasoning & Spices", type: "Food", targetId: "food" },
   { title: "Pito Millet Beer & Local Drinks", type: "Food", targetId: "food" },
