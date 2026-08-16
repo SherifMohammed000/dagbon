@@ -9,8 +9,6 @@ import {
   Music, 
   Image as ImageIcon, 
   Calendar, 
-  Users, 
-  Settings, 
   Search, 
   Bell,
   LogOut,
@@ -19,6 +17,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { getNotifications, getTimeAgo, AdminNotification } from "@/lib/notifications";
 
 const menuItems = [
   { name: "Overview", icon: <LayoutDashboard size={20} />, href: "/admin" },
@@ -34,6 +33,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const [showNotifications, setShowNotifications] = useState(false);
   const [authorized, setAuthorized] = useState(false);
+  const [notifications, setNotifications] = useState<AdminNotification[]>([]);
 
   useEffect(() => {
     const session = localStorage.getItem("dagbon_auth");
@@ -53,6 +53,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   }, [router]);
 
+  useEffect(() => {
+    const syncNotifs = () => setNotifications(getNotifications());
+    syncNotifs();
+    window.addEventListener("storage", syncNotifs);
+    return () => window.removeEventListener("storage", syncNotifs);
+  }, []);
+
   const handleLogout = () => {
     localStorage.removeItem("dagbon_auth");
     router.push("/");
@@ -70,9 +77,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="min-h-screen bg-sand/20 flex">
+    <div className="min-h-screen bg-white text-primary flex">
       {/* Sidebar */}
-      <aside className="w-64 bg-primary text-white flex flex-col fixed inset-y-0 left-0">
+      <aside className="w-64 bg-primary text-white flex flex-col fixed inset-y-0 left-0 z-40 shadow-xl">
         <div className="p-8">
           <Link href="/admin" className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-primary font-bold text-lg">
@@ -92,8 +99,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 className={cn(
                   "flex items-center gap-4 px-4 py-3 rounded-xl text-sm font-medium transition-all group",
                   isActive 
-                    ? "bg-accent text-primary" 
-                    : "text-sand/50 hover:bg-white/5 hover:text-white"
+                    ? "bg-accent text-primary font-bold shadow-md" 
+                    : "text-sand/70 hover:bg-white/10 hover:text-white"
                 )}
               >
                 <span className={cn("transition-colors", isActive ? "text-primary" : "text-accent")}>
@@ -117,62 +124,90 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 ml-64 min-h-screen flex flex-col">
+      <main className="flex-1 ml-64 min-h-screen flex flex-col bg-white text-primary">
         {/* Topbar */}
-        <header className="h-20 bg-white border-b border-secondary/10 flex items-center justify-between px-10 sticky top-0 z-30">
-          <div className="flex items-center gap-4 bg-sand/30 px-4 py-2 rounded-xl w-96 border border-secondary/5">
-            <Search size={18} className="text-earth/30" />
+        <header className="h-20 bg-white border-b border-secondary/10 flex items-center justify-between px-10 sticky top-0 z-30 shadow-xs">
+          <div className="flex items-center gap-4 bg-sand/20 px-4 py-2 rounded-xl w-96 border border-secondary/10">
+            <Search size={18} className="text-earth/40" />
             <input 
               type="text" 
               placeholder="Search content, users, media..." 
-              className="bg-transparent border-none focus:ring-0 text-sm flex-1"
+              className="bg-transparent border-none focus:ring-0 text-sm flex-1 text-primary placeholder:text-earth/40 outline-none"
             />
           </div>
 
-          <div className="flex items-center gap-6">
-            <button onClick={() => setShowNotifications(!showNotifications)} className="relative p-2 text-earth/50 hover:text-primary transition-colors cursor-pointer">
+          <div className="flex items-center gap-6 relative">
+            <button 
+              onClick={() => setShowNotifications(!showNotifications)} 
+              className="relative p-2 text-earth/60 hover:text-primary transition-colors cursor-pointer rounded-full hover:bg-sand/30"
+              title="Notifications"
+            >
               <Bell size={20} />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-secondary rounded-full border-2 border-white" />
+              {notifications.length > 0 && (
+                <span className="absolute top-1 right-1 w-4 h-4 bg-secondary text-white text-[9px] font-bold flex items-center justify-center rounded-full border-2 border-white shadow-xs">
+                  {notifications.length > 9 ? "9+" : notifications.length}
+                </span>
+              )}
             </button>
+
+            {/* Tap outside backdrop */}
+            {showNotifications && (
+              <div 
+                className="fixed inset-0 z-40" 
+                onClick={() => setShowNotifications(false)} 
+              />
+            )}
+
             <AnimatePresence>
               {showNotifications && (
                 <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="absolute top-16 right-24 w-80 bg-white rounded-2xl border border-secondary/10 shadow-2xl z-50 overflow-hidden"
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  className="absolute top-16 right-0 w-84 bg-white rounded-2xl border border-secondary/15 shadow-2xl z-50 overflow-hidden"
                 >
-                  <div className="p-4 border-b border-secondary/10">
+                  <div className="p-4 border-b border-secondary/10 flex items-center justify-between bg-sand/10">
                     <h4 className="font-bold text-primary text-sm">Notifications</h4>
+                    <span className="text-[10px] font-bold text-secondary uppercase tracking-wider">{notifications.length} recent</span>
                   </div>
-                  <div className="max-h-64 overflow-y-auto">
-                    {[
-                      { text: "New article published: History of Lunga", time: "2 hours ago" },
-                      { text: "3 new images uploaded to gallery", time: "5 hours ago" },
-                      { text: "Damba Festival countdown updated", time: "1 day ago" },
-                    ].map((n, i) => (
-                      <div key={i} className="p-4 border-b border-secondary/5 hover:bg-sand/10 transition-colors cursor-pointer">
-                        <p className="text-sm text-primary">{n.text}</p>
-                        <span className="text-[10px] text-earth/40 uppercase tracking-widest">{n.time}</span>
+                  <div className="max-h-80 overflow-y-auto divide-y divide-secondary/5 custom-scrollbar">
+                    {notifications.length === 0 ? (
+                      <div className="p-8 text-center text-earth/40 text-xs italic">
+                        No notifications yet. Admin actions and user suggestions will appear here.
                       </div>
-                    ))}
+                    ) : (
+                      notifications.map((n) => (
+                        <div key={n.id} className="p-4 hover:bg-sand/10 transition-colors">
+                          <p className="text-xs text-primary leading-relaxed font-medium mb-1">{n.text}</p>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[9px] font-bold uppercase tracking-widest text-secondary">
+                              {n.type}
+                            </span>
+                            <span className="text-[9px] text-earth/40 uppercase tracking-wider font-semibold">
+                              {getTimeAgo(n.timestamp)}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
+
             <div className="h-8 w-px bg-secondary/10" />
             <div className="flex items-center gap-3">
               <div className="text-right hidden md:block">
                 <p className="text-sm font-bold text-primary">Admin User</p>
-                <p className="text-[10px] text-earth/50 uppercase tracking-widest">Super Admin</p>
+                <p className="text-[10px] text-earth/50 uppercase tracking-widest font-semibold">Super Admin</p>
               </div>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-secondary to-primary border-2 border-accent/20" />
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-secondary to-primary border-2 border-accent/30 shadow-sm" />
             </div>
           </div>
         </header>
 
         {/* Page Content */}
-        <div className="p-10 flex-1">
+        <div className="p-10 flex-1 bg-white text-primary">
           {children}
         </div>
       </main>

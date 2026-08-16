@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { uploadFileToFirebase, getFileURL } from "@/lib/firebase";
+import { addNotification } from "@/lib/notifications";
 
 const getAudioDuration = (file: File): Promise<string> => {
   return new Promise((resolve) => {
@@ -108,6 +109,7 @@ export default function MusicManagement() {
       try {
         localStorage.setItem("dagbon_music", JSON.stringify(updated));
         setMusicItems(updated);
+        addNotification(`Added new track: "${newTitle}" by ${newArtist}`, "action");
         setNewTitle("");
         setNewArtist("");
         setNewCategory("Ceremonial");

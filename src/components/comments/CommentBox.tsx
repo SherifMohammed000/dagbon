@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, Send, LogIn, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
+import { addNotification } from "@/lib/notifications";
 
 type Comment = {
   id: number;
@@ -57,6 +58,7 @@ export default function CommentBox({ postId }: { postId: number }) {
     const updated = [comment, ...allComments];
     setAllComments(updated);
     saveComments(updated);
+    addNotification(`New comment from ${user.name}: "${text.trim().slice(0, 50)}${text.trim().length > 50 ? "..." : ""}"`, "comment");
     setText("");
     setSubmitted(true);
     setTimeout(() => setSubmitted(false), 2000);

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { uploadFileToFirebase, getFileURL } from "@/lib/firebase";
+import { addNotification } from "@/lib/notifications";
 
 export default function ContentManagement() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -119,6 +120,7 @@ export default function ContentManagement() {
       if (storageFailed) {
         alert("Failed to save post metadata. Local storage quota exceeded.");
       } else {
+        addNotification(editingId ? `Edited article: "${newTitle}"` : `Published article: "${newTitle}"`, "action");
         resetForm();
       }
     } catch (err) {

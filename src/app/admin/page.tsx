@@ -14,6 +14,8 @@ import {
   FileText
 } from "lucide-react";
 
+import { fetchUsersFromFirebase } from "@/lib/firebase";
+
 export default function AdminDashboard() {
   const router = useRouter();
   const [showCalendarPopup, setShowCalendarPopup] = useState(false);
@@ -56,6 +58,13 @@ export default function AdminDashboard() {
         festivals: festivals.length,
         users: users.length
       });
+
+      // Sync user count from Firebase Firestore
+      fetchUsersFromFirebase().then(fbUsers => {
+        if (fbUsers.length > 0) {
+          setCounts(prev => ({ ...prev, users: Math.max(prev.users, fbUsers.length) }));
+        }
+      }).catch(console.error);
 
       setRecentContent(content.slice(0, 3));
 

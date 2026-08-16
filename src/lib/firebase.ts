@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAnalytics, isSupported } from "firebase/analytics";
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "firebase/firestore";
 
 // Firebase configuration provided by the user
 const firebaseConfig = {
@@ -13,10 +14,12 @@ const firebaseConfig = {
 };
 
 let app: any;
+let db: any = null;
 let analytics: any = null;
 
 try {
   app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+  db = getFirestore(app);
 
   // Initialize analytics only on the client side where it's supported
   if (typeof window !== "undefined") {
@@ -27,9 +30,58 @@ try {
     });
   }
 
-  console.log("Firebase initialized successfully.");
+  console.log("Firebase & Firestore initialized successfully.");
 } catch (error) {
   console.error("Error initializing Firebase:", error);
+}
+
+export { db };
+
+/**
+ * Saves or updates a user profile in Firebase Firestore under 'users' collection.
+ */
+export async function saveUserToFirebase(userData: {
+  name: string;
+  email: string;
+  isAdmin: boolean;
+  password?: string;
+}): Promise<void> {
+  if (!db) return;
+  try {
+    const docId = userData.email.toLowerCase().replace(/[^a-z0-9]/g, "_");
+    const userRef = doc(db, "users", docId);
+    await setDoc(
+      userRef,
+      {
+        name: userData.name,
+        email: userData.email.toLowerCase(),
+        isAdmin: userData.isAdmin,
+        role: userData.isAdmin ? "Super Admin" : "Registered User",
+        lastActive: new Date().toISOString(),
+        ...(userData.password ? { password: userData.password } : {}),
+      },
+      { merge: true }
+    );
+    console.log(`User ${userData.email} successfully saved to Firebase.`);
+  } catch (error) {
+    console.error("Firebase save user error:", error);
+  }
+}
+
+/**
+ * Fetches all registered users from Firebase Firestore.
+ */
+export async function fetchUsersFromFirebase(): Promise<any[]> {
+  if (!db) return [];
+  try {
+    const snapshot = await getDocs(collection(db, "users"));
+    const users: any[] = [];
+    snapshot.forEach((d) => users.push(d.data()));
+    return users;
+  } catch (error) {
+    console.error("Firebase fetch users error:", error);
+    return [];
+  }
 }
 
 // ---------------------------------------------------------------------------

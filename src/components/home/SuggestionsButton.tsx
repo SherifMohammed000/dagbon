@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MessageSquarePlus, X, Send, LogIn, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
+import { addNotification } from "@/lib/notifications";
 
 type Suggestion = {
   id: number;
@@ -39,6 +40,8 @@ export default function SuggestionsButton() {
       date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
       status: "new",
     });
+
+    addNotification(`New suggestion from ${user.name}: "${text.trim().slice(0, 50)}${text.trim().length > 50 ? "..." : ""}"`, "suggestion");
 
     setDone(true);
     setTimeout(() => {

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Mail, Lock, User, ArrowRight, Sparkles, Eye, EyeOff } from "lucide-react";
+import { saveUserToFirebase } from "@/lib/firebase";
 
 export default function AuthPage() {
   const router = useRouter();
@@ -49,6 +50,8 @@ export default function AuthPage() {
         };
         localStorage.setItem("dagbon_auth", JSON.stringify(session));
         window.dispatchEvent(new Event("storage"));
+        // Save admin to Firebase
+        saveUserToFirebase({ name: "Admin User", email: "admin@dagbon.com", isAdmin: true, password: "Nuru@dagbon" });
         router.push("/admin");
         return;
       }
@@ -69,6 +72,8 @@ export default function AuthPage() {
         };
         localStorage.setItem("dagbon_auth", JSON.stringify(session));
         window.dispatchEvent(new Event("storage"));
+        // Save user to Firebase on login
+        saveUserToFirebase({ name: user.name, email: user.email, isAdmin: false });
         router.push("/");
       } else {
         setError("Invalid email or password.");
@@ -87,6 +92,8 @@ export default function AuthPage() {
       const newUser = { name, email, password };
       users.push(newUser);
       localStorage.setItem("dagbon_users", JSON.stringify(users));
+      // Save new user to Firebase
+      saveUserToFirebase({ name, email, isAdmin: false, password });
 
       setSuccess("Account created successfully! Switching to login...");
       setTimeout(() => {
