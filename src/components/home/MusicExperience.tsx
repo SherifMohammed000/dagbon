@@ -8,41 +8,17 @@ import { getFileURL } from "@/lib/firebase";
 
 type Track = { title: string; artist: string; category: string; duration: string; url: string };
 
-const defaultTracks: Track[] = [
-  {
-    title: "Damba Festival Rhythms",
-    artist: "Yendi Royal Drummers",
-    category: "Ceremonial",
-    duration: "4:15",
-    url: ""
-  },
-  {
-    title: "Lunga & Gungon Talking Drums",
-    artist: "Savelugu Master Drummers",
-    category: "Instrumental",
-    duration: "3:45",
-    url: ""
-  },
-  {
-    title: "Baamaaya Ancestral Chants",
-    artist: "Dagbon Cultural Troupe",
-    category: "Festival",
-    duration: "5:20",
-    url: ""
-  }
-];
-
 function loadTracks(): Track[] {
   if (typeof window !== "undefined") {
     const stored = localStorage.getItem("dagbon_music");
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       } catch {}
     }
   }
-  return defaultTracks;
+  return [];
 }
 
 export default function MusicExperience() {
