@@ -74,7 +74,7 @@ export default function AboutDagbon() {
             </motion.div>
 
             <div className="space-y-12 relative">
-              <div className="absolute left-10 top-0 bottom-0 w-0.5 bg-gradient-to-b from-secondary/40 via-secondary/10 to-transparent" />
+              <div className="absolute left-6 sm:left-10 top-0 bottom-0 w-0.5 bg-gradient-to-b from-secondary/40 via-secondary/10 to-transparent" />
               
               {timelineEvents.map((event, index) => (
                 <motion.div
@@ -83,19 +83,19 @@ export default function AboutDagbon() {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.15 }}
-                  className="relative pl-24 group"
+                  className="relative pl-16 sm:pl-24 group"
                 >
-                  <div className="absolute left-0 top-0 w-20 h-20 rounded-3xl bg-sand/30 flex items-center justify-center border border-secondary/10 z-10 group-hover:bg-secondary group-hover:text-white transition-all duration-500 shadow-xl shadow-secondary/5 group-hover:scale-110">
-                    <History className="transition-transform group-hover:rotate-12" size={32} />
+                  <div className="absolute left-0 top-0 w-12 h-12 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl bg-sand/30 flex items-center justify-center border border-secondary/10 z-10 group-hover:bg-secondary group-hover:text-white transition-all duration-500 shadow-xl shadow-secondary/5 group-hover:scale-110">
+                    <History className="transition-transform group-hover:rotate-12 w-6 h-6 sm:w-8 sm:h-8" />
                   </div>
-                  <div className="p-10 rounded-[40px] bg-[#fafafa] border border-secondary/5 hover:bg-white hover:shadow-2xl transition-all duration-500 group">
-                    <span className="text-sm font-black text-secondary tracking-[0.3em] uppercase mb-4 block opacity-60">
+                  <div className="p-6 sm:p-10 rounded-[28px] sm:rounded-[40px] bg-[#fafafa] border border-secondary/5 hover:bg-white hover:shadow-2xl transition-all duration-500 group">
+                    <span className="text-xs sm:text-sm font-black text-secondary tracking-[0.2em] sm:tracking-[0.3em] uppercase mb-2 sm:mb-4 block opacity-60">
                       {event.year}
                     </span>
-                    <h3 className="text-2xl font-serif text-primary mb-3 group-hover:text-secondary transition-colors">
+                    <h3 className="text-xl sm:text-2xl font-serif text-primary mb-2 sm:mb-3 group-hover:text-secondary transition-colors">
                       {event.title}
                     </h3>
-                    <p className="text-earth/60 text-base leading-relaxed font-light">
+                    <p className="text-earth/60 text-sm sm:text-base leading-relaxed font-light">
                       {event.description}
                     </p>
                   </div>

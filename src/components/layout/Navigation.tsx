@@ -167,7 +167,7 @@ export default function Navigation() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="absolute top-24 left-6 right-6 glass-dark border border-white/10 rounded-3xl p-8 md:hidden z-40"
+            className="fixed top-24 left-4 right-4 glass-dark border border-white/10 rounded-3xl p-6 sm:p-8 md:hidden z-50 max-h-[80vh] overflow-y-auto custom-scrollbar shadow-2xl"
           >
             <div className="flex flex-col gap-6">
               {navLinks.map((link) => (

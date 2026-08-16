@@ -1,8 +1,8 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -12,7 +12,9 @@ import {
   Search, 
   Bell,
   LogOut,
-  MessageSquare
+  MessageSquare,
+  Menu,
+  X
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -34,6 +36,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [showNotifications, setShowNotifications] = useState(false);
   const [authorized, setAuthorized] = useState(false);
   const [notifications, setNotifications] = useState<AdminNotification[]>([]);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const session = localStorage.getItem("dagbon_auth");
@@ -86,25 +89,43 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="min-h-screen bg-white text-primary flex">
+    <div className="min-h-screen bg-white text-primary flex relative overflow-x-hidden">
+      {/* Mobile Drawer Backdrop */}
+      {mobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 md:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 bg-primary text-white flex flex-col fixed inset-y-0 left-0 z-40 shadow-xl">
-        <div className="p-8">
-          <Link href="/admin" className="flex items-center gap-2">
+      <aside className={cn(
+        "w-64 bg-primary text-white flex flex-col fixed inset-y-0 left-0 z-50 shadow-xl transition-transform duration-300 ease-in-out",
+        mobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+      )}>
+        <div className="p-6 md:p-8 flex items-center justify-between">
+          <Link href="/admin" className="flex items-center gap-2" onClick={() => setMobileMenuOpen(false)}>
             <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-primary font-bold text-lg">
               D
             </div>
             <span className="font-serif text-xl">Admin Panel</span>
           </Link>
+          <button 
+            onClick={() => setMobileMenuOpen(false)} 
+            className="md:hidden text-sand/60 hover:text-white p-1"
+          >
+            <X size={20} />
+          </button>
         </div>
 
-        <nav className="flex-1 px-4 space-y-2">
+        <nav className="flex-1 px-4 space-y-2 overflow-y-auto custom-scrollbar">
           {menuItems.map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link
                 key={item.name}
                 href={item.href}
+                onClick={() => setMobileMenuOpen(false)}
                 className={cn(
                   "flex items-center gap-4 px-4 py-3 rounded-xl text-sm font-medium transition-all group",
                   isActive 
@@ -133,19 +154,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 ml-64 min-h-screen flex flex-col bg-white text-primary">
+      <main className="flex-1 ml-0 md:ml-64 min-h-screen flex flex-col bg-white text-primary w-full max-w-full overflow-x-hidden">
         {/* Topbar */}
-        <header className="h-20 bg-white border-b border-secondary/10 flex items-center justify-between px-10 sticky top-0 z-30 shadow-xs">
-          <div className="flex items-center gap-4 bg-sand/20 px-4 py-2 rounded-xl w-96 border border-secondary/10">
-            <Search size={18} className="text-earth/40" />
-            <input 
-              type="text" 
-              placeholder="Search content, users, media..." 
-              className="bg-transparent border-none focus:ring-0 text-sm flex-1 text-primary placeholder:text-earth/40 outline-none"
-            />
+        <header className="h-20 bg-white border-b border-secondary/10 flex items-center justify-between px-4 sm:px-6 md:px-10 sticky top-0 z-30 shadow-xs gap-3">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setMobileMenuOpen(true)}
+              className="md:hidden p-2 text-primary hover:bg-sand/30 rounded-xl transition-colors cursor-pointer"
+              title="Open Navigation Menu"
+            >
+              <Menu size={24} />
+            </button>
+            <div className="hidden sm:flex items-center gap-4 bg-sand/20 px-4 py-2 rounded-xl w-48 sm:w-64 md:w-96 border border-secondary/10">
+              <Search size={18} className="text-earth/40 shrink-0" />
+              <input 
+                type="text" 
+                placeholder="Search..." 
+                className="bg-transparent border-none focus:ring-0 text-sm flex-1 text-primary placeholder:text-earth/40 outline-none w-full"
+              />
+            </div>
           </div>
 
-          <div className="flex items-center gap-6 relative">
+          <div className="flex items-center gap-4 sm:gap-6 relative">
             <button 
               onClick={toggleNotifications} 
               className="relative p-2 text-earth/60 hover:text-primary transition-colors cursor-pointer rounded-full hover:bg-sand/30"
@@ -173,7 +203,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   initial={{ opacity: 0, y: -10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                  className="absolute top-16 right-0 w-84 bg-white rounded-2xl border border-secondary/15 shadow-2xl z-50 overflow-hidden"
+                  className="absolute top-16 right-0 w-72 sm:w-84 bg-white rounded-2xl border border-secondary/15 shadow-2xl z-50 overflow-hidden"
                 >
                   <div className="p-4 border-b border-secondary/10 flex items-center justify-between bg-sand/10">
                     <h4 className="font-bold text-primary text-sm">Notifications</h4>
@@ -214,19 +244,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               )}
             </AnimatePresence>
 
-            <div className="h-8 w-px bg-secondary/10" />
+            <div className="h-8 w-px bg-secondary/10 hidden sm:block" />
             <div className="flex items-center gap-3">
-              <div className="text-right hidden md:block">
+              <div className="text-right hidden sm:block">
                 <p className="text-sm font-bold text-primary">Admin User</p>
                 <p className="text-[10px] text-earth/50 uppercase tracking-widest font-semibold">Super Admin</p>
               </div>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-secondary to-primary border-2 border-accent/30 shadow-sm" />
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-secondary to-primary border-2 border-accent/30 shadow-sm shrink-0" />
             </div>
           </div>
         </header>
 
         {/* Page Content */}
-        <div className="p-10 flex-1 bg-white text-primary">
+        <div className="p-4 sm:p-6 md:p-10 flex-1 bg-white text-primary w-full max-w-full overflow-x-hidden">
           {children}
         </div>
       </main>

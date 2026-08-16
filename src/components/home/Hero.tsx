@@ -7,7 +7,7 @@ import Link from "next/link";
 
 export default function Hero() {
   return (
-    <section className="relative h-screen w-full overflow-hidden flex items-center justify-center">
+    <section className="relative min-h-screen py-20 md:py-0 w-full overflow-hidden flex items-center justify-center">
       {/* Cinematic Background */}
       <div className="absolute inset-0 z-0">
         <Image
@@ -22,7 +22,7 @@ export default function Hero() {
       </div>
 
       {/* Floating Tribal Symbols (Decorative) */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden hidden sm:block">
         {[...Array(6)].map((_, i) => (
           <motion.div
             key={i}
@@ -49,29 +49,29 @@ export default function Hero() {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 container mx-auto px-6 text-center">
+      <div className="relative z-10 container mx-auto px-4 sm:px-6 text-center">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.2, ease: "easeOut" }}
         >
-          <span className="inline-block px-5 py-2 mb-8 text-[10px] font-bold tracking-[0.3em] text-accent uppercase glass-dark rounded-full border border-accent/30 shadow-2xl">
+          <span className="inline-block px-4 py-1.5 sm:px-5 sm:py-2 mb-6 sm:mb-8 text-[9px] sm:text-[10px] font-bold tracking-[0.2em] sm:tracking-[0.3em] text-accent uppercase glass-dark rounded-full border border-accent/30 shadow-2xl">
             The Heart of Northern Ghana
           </span>
-          <h1 className="text-5xl sm:text-6xl md:text-9xl font-serif text-white mb-8 leading-[0.9] drop-shadow-2xl">
+          <h1 className="text-4xl sm:text-6xl md:text-8xl lg:text-9xl font-serif text-white mb-6 sm:mb-8 leading-[0.95] drop-shadow-2xl">
             Discover the <br /> 
             <span className="text-gradient">Sacred Heritage</span>
           </h1>
-          <p className="max-w-2xl mx-auto text-xl md:text-2xl text-sand/70 mb-12 leading-relaxed font-light italic">
+          <p className="max-w-2xl mx-auto text-base sm:text-xl md:text-2xl text-sand/70 mb-8 sm:mb-12 leading-relaxed font-light italic">
             "A kingdom of rhythm, a land of skin, a people of gold."
           </p>
 
           {/* CTA Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
-            <CTAButton icon={<History size={24} />} label="Explore Culture" href="#fashion" />
-            <CTAButton icon={<Music size={24} />} label="Traditional Music" href="#music" />
-            <CTAButton icon={<Calendar size={24} />} label="View Festivals" href="#festivals" />
-            <CTAButton icon={<Play size={24} />} label="Learn History" href="#history" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 max-w-5xl mx-auto">
+            <CTAButton icon={<History size={22} />} label="Explore Culture" href="#history" />
+            <CTAButton icon={<Music size={22} />} label="Traditional Music" href="#music" />
+            <CTAButton icon={<Calendar size={22} />} label="View Festivals" href="#festivals" />
+            <CTAButton icon={<Play size={22} />} label="Learn History" href="#posts" />
           </div>
         </motion.div>
       </div>

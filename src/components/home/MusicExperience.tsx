@@ -155,15 +155,15 @@ export default function MusicExperience() {
 
             {/* Main Player Visual */}
             <div className="lg:col-span-2">
-              <div className="bg-black/40 backdrop-blur-3xl p-8 md:p-12 rounded-[48px] border border-white/10 relative shadow-2xl overflow-hidden">
+              <div className="bg-black/40 backdrop-blur-3xl p-5 sm:p-8 md:p-12 rounded-[32px] sm:rounded-[48px] border border-white/10 relative shadow-2xl overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-accent/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
 
-                <div className="flex flex-col md:flex-row gap-12 items-center relative z-10">
+                <div className="flex flex-col md:flex-row gap-8 sm:gap-12 items-center relative z-10">
                   <motion.div
                     key={currentTrack}
                     initial={{ scale: 0.9, opacity: 0, rotate: -10 }}
                     animate={{ scale: 1, opacity: 1, rotate: 0 }}
-                    className="w-64 h-64 rounded-3xl shadow-2xl relative overflow-hidden flex-shrink-0 group"
+                    className="w-48 h-48 sm:w-64 sm:h-64 rounded-3xl shadow-2xl relative overflow-hidden flex-shrink-0 group"
                   >
                     <Image src="/drummer.jpg" alt="Dagbon Drummer" fill className="object-cover object-center group-hover:scale-110 transition-transform duration-700" />
                     <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors" />
