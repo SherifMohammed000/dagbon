@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAnalytics, isSupported } from "firebase/analytics";
-import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "firebase/firestore";
+import { getFirestore, doc, setDoc, deleteDoc, getDoc, collection, getDocs, onSnapshot } from "firebase/firestore";
 import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 
 // Firebase configuration provided by the user
@@ -113,6 +113,91 @@ export async function saveUserToFirebase(userData: {
     console.log(`User ${cleanEmail} successfully saved to Firebase Firestore.`);
   } catch (error) {
     console.error("Firebase save user error:", error);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Firestore Posts Engine (replaces localStorage for articles/posts)
+// ---------------------------------------------------------------------------
+
+export async function savePostToFirebase(post: {
+  id?: string | number;
+  title: string;
+  category: string;
+  body: string;
+  status: string;
+  author?: string;
+  fileUrl?: string;
+  date?: string;
+}): Promise<string> {
+  const docId = post.id ? String(post.id) : `${Date.now()}`;
+  const data = {
+    id: docId,
+    title: post.title,
+    category: post.category,
+    body: post.body,
+    status: post.status,
+    author: post.author || "Admin",
+    date: post.date || new Date().toISOString().split("T")[0],
+    fileUrl: post.fileUrl || "",
+    timestamp: post.id ? Number(post.id) : Date.now(),
+  };
+
+  if (db) {
+    try {
+      await setDoc(doc(db, "posts", docId), data, { merge: true });
+      console.log(`Post "${post.title}" saved to Firebase Firestore (posts/${docId}).`);
+    } catch (e) {
+      console.error("Firestore save post error:", e);
+    }
+  }
+  return docId;
+}
+
+export async function fetchPostsFromFirebase(): Promise<any[]> {
+  if (!db) return [];
+  try {
+    const snapshot = await getDocs(collection(db, "posts"));
+    const posts: any[] = [];
+    snapshot.forEach((d) => posts.push(d.data()));
+    posts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    return posts;
+  } catch (e) {
+    console.error("Firestore fetch posts error:", e);
+    return [];
+  }
+}
+
+export async function deletePostFromFirebase(id: string | number): Promise<void> {
+  const docId = String(id);
+  if (db) {
+    try {
+      await deleteDoc(doc(db, "posts", docId));
+      console.log(`Post ${docId} deleted from Firebase Firestore.`);
+    } catch (e) {
+      console.error("Firestore delete post error:", e);
+    }
+  }
+}
+
+export function subscribePostsFromFirebase(callback: (posts: any[]) => void): () => void {
+  if (!db) {
+    callback([]);
+    return () => {};
+  }
+  try {
+    const unsubscribe = onSnapshot(collection(db, "posts"), (snapshot) => {
+      const posts: any[] = [];
+      snapshot.forEach((d) => posts.push(d.data()));
+      posts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      callback(posts);
+    }, (err) => {
+      console.error("Firestore subscribe posts error:", err);
+    });
+    return unsubscribe;
+  } catch (e) {
+    console.error("Firestore subscribe error:", e);
+    return () => {};
   }
 }
 

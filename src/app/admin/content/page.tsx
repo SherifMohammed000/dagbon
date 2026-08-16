@@ -14,7 +14,13 @@ import {
   Loader2
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { uploadFileToFirebase, getFileURL } from "@/lib/firebase";
+import { 
+  uploadFileToFirebase, 
+  getFileURL, 
+  savePostToFirebase, 
+  deletePostFromFirebase, 
+  subscribePostsFromFirebase 
+} from "@/lib/firebase";
 import { addNotification } from "@/lib/notifications";
 
 export default function ContentManagement() {
@@ -26,33 +32,29 @@ export default function ContentManagement() {
   const [newBody, setNewBody] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<any>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem("dagbon_content");
-    if (saved) {
-      try {
-        setContentItems(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to parse content items", e);
-      }
-    }
+    const unsubscribe = subscribePostsFromFirebase((posts) => {
+      setContentItems(posts);
+    });
+    return () => unsubscribe();
   }, []);
 
-  const handleDelete = (id: number, title?: string) => {
+  const handleDelete = async (id: any, title?: string) => {
     const confirmed = window.confirm(`Are you sure you want to delete "${title || 'this post'}"? This action cannot be undone.`);
     if (!confirmed) return;
 
-    setContentItems(prev => {
-      const updated = prev.filter(item => item.id !== id);
-      localStorage.setItem("dagbon_content", JSON.stringify(updated));
-      window.dispatchEvent(new Event("storage"));
-      return updated;
-    });
+    try {
+      await deletePostFromFirebase(id);
+      addNotification(`Deleted article: "${title || 'Post'}"`, "action");
+    } catch (e) {
+      console.error("Delete post error", e);
+    }
   };
   
   const [previewItem, setPreviewItem] = useState<{
-    id?: number;
+    id?: any;
     title: string;
     category: string;
     body: string;
@@ -91,60 +93,29 @@ export default function ContentManagement() {
         }
       }
       
-      const currentSaved = localStorage.getItem("dagbon_content");
-      const currentItems: any[] = currentSaved ? JSON.parse(currentSaved) : contentItems;
+      const existingItem = editingId ? contentItems.find(i => String(i.id) === String(editingId)) : null;
 
-      let updated: any[];
-      if (editingId) {
-        updated = currentItems.map((item: any) => {
-          if (item.id === editingId) {
-            return {
-              ...item,
-              title: newTitle,
-              category: newCategory,
-              body: newBody,
-              status,
-              ...(fileUrl ? { fileUrl } : {})
-            };
-          }
-          return item;
-        });
-      } else {
-        const newItem = { 
-          id: Date.now(), 
-          title: newTitle, 
-          category: newCategory, 
-          status, 
-          author: "Admin", 
-          date: new Date().toISOString().split('T')[0],
-          fileUrl,
-          body: newBody
-        };
-        updated = [newItem, ...currentItems];
-      }
+      const postToSave = {
+        id: editingId ? String(editingId) : String(Date.now()),
+        title: newTitle,
+        category: newCategory,
+        body: newBody,
+        status,
+        author: "Admin",
+        date: existingItem?.date || new Date().toISOString().split('T')[0],
+        fileUrl: fileUrl || existingItem?.fileUrl || ""
+      };
 
-      let storageFailed = false;
-      try {
-        localStorage.setItem("dagbon_content", JSON.stringify(updated));
-        window.dispatchEvent(new Event("storage"));
-        setContentItems(updated);
-      } catch (err) {
-        console.error(err);
-        storageFailed = true;
-      }
+      await savePostToFirebase(postToSave);
       
-      if (storageFailed) {
-        alert("Failed to save post metadata. Local storage quota exceeded.");
-      } else {
-        addNotification(
-          editingId ? `Edited article: "${newTitle}"` : `Published article: "${newTitle}" (${status})`,
-          "action"
-        );
-        resetForm();
-      }
+      addNotification(
+        editingId ? `Edited article: "${newTitle}"` : `Published article: "${newTitle}" (${status})`,
+        "action"
+      );
+      resetForm();
     } catch (err) {
       console.error(err);
-      alert("An error occurred while saving the post.");
+      alert("An error occurred while saving the post to Firebase.");
     } finally {
       setUploading(false);
     }

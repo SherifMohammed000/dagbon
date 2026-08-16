@@ -4,10 +4,10 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FileText, ChevronDown, ChevronUp, Calendar, MessageCircle, Paperclip } from "lucide-react";
 import CommentBox from "@/components/comments/CommentBox";
-import { getFileURL } from "@/lib/firebase";
+import { getFileURL, subscribePostsFromFirebase } from "@/lib/firebase";
 
 type Post = {
-  id: number;
+  id: any;
   title: string;
   category: string;
   body: string;
@@ -16,19 +16,6 @@ type Post = {
   author?: string;
   status?: string;
 };
-
-function loadPosts(): Post[] {
-  if (typeof window !== "undefined") {
-    const raw = localStorage.getItem("dagbon_content");
-    if (raw) { 
-      try { 
-        const parsed = JSON.parse(raw); 
-        if (Array.isArray(parsed)) return parsed;
-      } catch {} 
-    }
-  }
-  return [];
-}
 
 function commentCount(postId: number): number {
   if (typeof window !== "undefined") {
@@ -103,30 +90,31 @@ function PostReactions({ postId }: { postId: number }) {
 
   return (
     <div className="flex items-center gap-2 flex-wrap mt-4">
-      {/* Existing reactions */}
-      {activeReactions.map(([emoji, users]) => (
-        <button
-          key={emoji}
-          onClick={() => toggleReaction(emoji)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition-all cursor-pointer ${
-            users.includes(userId)
-              ? "bg-secondary/10 border-secondary/30 shadow-sm"
-              : "bg-sand/20 border-secondary/5 hover:bg-sand/40"
-          }`}
-        >
-          <span className="text-base">{emoji}</span>
-          <span className="text-[11px] font-bold text-earth/60">{users.length}</span>
-        </button>
-      ))}
+      {activeReactions.map(([emoji, users]) => {
+        const hasReacted = users.includes(userId);
+        return (
+          <button
+            key={emoji}
+            onClick={() => toggleReaction(emoji)}
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer border ${
+              hasReacted
+                ? "bg-secondary/15 border-secondary/40 text-secondary scale-105"
+                : "bg-sand/30 border-secondary/10 text-earth/70 hover:bg-sand/60"
+            }`}
+          >
+            <span>{emoji}</span>
+            <span>{users.length}</span>
+          </button>
+        );
+      })}
 
       {/* Add reaction button */}
       <div className="relative">
         <button
           onClick={() => setShowPicker(!showPicker)}
-          className="w-8 h-8 rounded-full bg-sand/20 border border-secondary/5 hover:bg-sand/40 flex items-center justify-center text-earth/40 hover:text-earth/70 transition-all cursor-pointer text-sm"
-          title="Add reaction"
+          className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-sand/20 border border-secondary/10 text-earth/50 hover:text-secondary hover:bg-sand/40 transition-all cursor-pointer"
         >
-          +
+          <span>+ Add Reaction</span>
         </button>
         <AnimatePresence>
           {showPicker && (
@@ -154,18 +142,14 @@ function PostReactions({ postId }: { postId: number }) {
 }
 
 export default function PostsSection() {
-  const [posts, setPosts] = useState<Post[]>(loadPosts);
-  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [expandedId, setExpandedId] = useState<any>(null);
 
   useEffect(() => {
-    const handler = () => setPosts(loadPosts());
-    handler(); // Immediately load on client mount
-    window.addEventListener("storage", handler);
-    window.addEventListener("focus", handler);
-    return () => {
-      window.removeEventListener("storage", handler);
-      window.removeEventListener("focus", handler);
-    };
+    const unsubscribe = subscribePostsFromFirebase((fetchedPosts) => {
+      setPosts(fetchedPosts);
+    });
+    return () => unsubscribe();
   }, []);
 
   const published = posts.filter((p) => !p.status || p.status !== "Draft");
