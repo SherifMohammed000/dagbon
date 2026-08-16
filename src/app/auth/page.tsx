@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Mail, Lock, User, ArrowRight, Sparkles } from "lucide-react";
+import { Mail, Lock, User, ArrowRight, Sparkles, Eye, EyeOff } from "lucide-react";
 
 export default function AuthPage() {
   const router = useRouter();
@@ -12,6 +12,7 @@ export default function AuthPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
@@ -39,7 +40,7 @@ export default function AuthPage() {
 
     if (isLogin) {
       // Check admin credentials
-      if (email.toLowerCase() === "admin@dagbon.com" && password === "Nuru000") {
+      if (email.toLowerCase() === "admin@dagbon.com" && password === "Nuru@dagbon") {
         const session = {
           email: "admin@dagbon.com",
           name: "Admin User",
@@ -173,12 +174,20 @@ export default function AuthPage() {
             <div className="flex items-center gap-3 bg-white/5 rounded-2xl px-4 py-3.5 border border-white/10 focus-within:border-accent/50 transition-colors">
               <Lock size={18} className="text-sand/40" />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="bg-transparent border-none outline-none text-white text-sm flex-1 placeholder:text-sand/30"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="text-sand/40 hover:text-accent transition-colors cursor-pointer p-1"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
           </div>
 
